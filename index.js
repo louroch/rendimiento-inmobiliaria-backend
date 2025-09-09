@@ -14,13 +14,24 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Middleware
-app.use(helmet());
-app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? [process.env.FRONTEND_URL || 'https://rendimiento-inmobiliaria-frontend.vercel.app'] 
-    : ['http://localhost:3000', 'http://localhost:5001'],
-  credentials: true
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" }
 }));
+
+// Configuración de CORS simplificada
+app.use(cors({
+  origin: [
+    'https://rendimiento-inmobiliaria-frontend.vercel.app',
+    'http://localhost:3000',
+    'http://localhost:5001',
+    'http://127.0.0.1:3000'
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  optionsSuccessStatus: 200
+}));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -31,12 +42,19 @@ app.use('/api/performance', performanceRoutes);
 app.use('/api/records', recordsRoutes);
 app.use('/api/gemini', geminiRoutes);
 
+// Middleware de logging para debug
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.path} - Origin: ${req.headers.origin || 'No origin'}`);
+  next();
+});
+
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'OK', 
     message: 'Sistema de Monitoreo de Desempeño Inmobiliario',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    cors: 'enabled'
   });
 });
 
