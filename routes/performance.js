@@ -14,7 +14,13 @@ router.post('/', authenticateToken, [
   body('muestrasRealizadas').isInt({ min: 0 }).withMessage('Muestras realizadas debe ser un número positivo'),
   body('operacionesCerradas').isInt({ min: 0 }).withMessage('Operaciones cerradas debe ser un número positivo'),
   body('seguimiento').isBoolean().withMessage('Seguimiento debe ser un valor booleano'),
-  body('usoTokko').optional().isString().trim()
+  body('usoTokko').optional().isString().trim(),
+  // NUEVOS CAMPOS - Validaciones
+  body('cantidadPropiedadesTokko').optional().isInt({ min: 0 }).withMessage('Cantidad de propiedades debe ser un número positivo'),
+  body('linksTokko').optional().isString().trim(),
+  body('dificultadTokko').optional().isBoolean().withMessage('Dificultad Tokko debe ser un valor booleano'),
+  body('detalleDificultadTokko').optional().isString().trim(),
+  body('observaciones').optional().isString().trim()
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -31,7 +37,13 @@ router.post('/', authenticateToken, [
       muestrasRealizadas,
       operacionesCerradas,
       seguimiento,
-      usoTokko
+      usoTokko,
+      // NUEVOS CAMPOS
+      cantidadPropiedadesTokko,
+      linksTokko,
+      dificultadTokko,
+      detalleDificultadTokko,
+      observaciones
     } = req.body;
 
     const performance = await prisma.performance.create({
@@ -42,7 +54,13 @@ router.post('/', authenticateToken, [
         muestrasRealizadas,
         operacionesCerradas,
         seguimiento,
-        usoTokko: usoTokko || null
+        usoTokko: usoTokko || null,
+        // NUEVOS CAMPOS
+        cantidadPropiedadesTokko: cantidadPropiedadesTokko || null,
+        linksTokko: linksTokko || null,
+        dificultadTokko: dificultadTokko || null,
+        detalleDificultadTokko: detalleDificultadTokko || null,
+        observaciones: observaciones || null
       },
       include: {
         user: {
@@ -178,7 +196,13 @@ router.put('/:id', authenticateToken, [
   body('muestrasRealizadas').optional().isInt({ min: 0 }).withMessage('Muestras realizadas debe ser un número positivo'),
   body('operacionesCerradas').optional().isInt({ min: 0 }).withMessage('Operaciones cerradas debe ser un número positivo'),
   body('seguimiento').optional().isBoolean().withMessage('Seguimiento debe ser un valor booleano'),
-  body('usoTokko').optional().isString().trim()
+  body('usoTokko').optional().isString().trim(),
+  // NUEVOS CAMPOS - Validaciones para actualización
+  body('cantidadPropiedadesTokko').optional().isInt({ min: 0 }).withMessage('Cantidad de propiedades debe ser un número positivo'),
+  body('linksTokko').optional().isString().trim(),
+  body('dificultadTokko').optional().isBoolean().withMessage('Dificultad Tokko debe ser un valor booleano'),
+  body('detalleDificultadTokko').optional().isString().trim(),
+  body('observaciones').optional().isString().trim()
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -206,7 +230,20 @@ router.put('/:id', authenticateToken, [
     }
 
     const updateData = {};
-    const { fecha, consultasRecibidas, muestrasRealizadas, operacionesCerradas, seguimiento, usoTokko } = req.body;
+    const { 
+      fecha, 
+      consultasRecibidas, 
+      muestrasRealizadas, 
+      operacionesCerradas, 
+      seguimiento, 
+      usoTokko,
+      // NUEVOS CAMPOS
+      cantidadPropiedadesTokko,
+      linksTokko,
+      dificultadTokko,
+      detalleDificultadTokko,
+      observaciones
+    } = req.body;
 
     if (fecha !== undefined) updateData.fecha = new Date(fecha);
     if (consultasRecibidas !== undefined) updateData.consultasRecibidas = consultasRecibidas;
@@ -214,6 +251,13 @@ router.put('/:id', authenticateToken, [
     if (operacionesCerradas !== undefined) updateData.operacionesCerradas = operacionesCerradas;
     if (seguimiento !== undefined) updateData.seguimiento = seguimiento;
     if (usoTokko !== undefined) updateData.usoTokko = usoTokko || null;
+    
+    // NUEVOS CAMPOS - Actualización
+    if (cantidadPropiedadesTokko !== undefined) updateData.cantidadPropiedadesTokko = cantidadPropiedadesTokko || null;
+    if (linksTokko !== undefined) updateData.linksTokko = linksTokko || null;
+    if (dificultadTokko !== undefined) updateData.dificultadTokko = dificultadTokko || null;
+    if (detalleDificultadTokko !== undefined) updateData.detalleDificultadTokko = detalleDificultadTokko || null;
+    if (observaciones !== undefined) updateData.observaciones = observaciones || null;
 
     const performance = await prisma.performance.update({
       where: { id },

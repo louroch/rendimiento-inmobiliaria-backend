@@ -34,6 +34,14 @@ model Performance {
   operacionesCerradas Int
   seguimiento         Boolean  @default(false)
   usoTokko            String?
+  
+  // NUEVOS CAMPOS SOLICITADOS
+  cantidadPropiedadesTokko Int?     // Cantidad de propiedades cargadas en Tokko
+  linksTokko              String?   // Links de las propiedades (separados por comas)
+  dificultadTokko         Boolean?  // ¿Se te dificultó el uso de Tokko?
+  detalleDificultadTokko  String?   // Detalle de la dificultad (si eligió "Sí")
+  observaciones           String?   // Campo de observaciones generales
+  
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 
