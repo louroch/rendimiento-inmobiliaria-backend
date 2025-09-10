@@ -16,15 +16,19 @@ router.post('/', authenticateToken, [
   body('seguimiento').isBoolean().withMessage('Seguimiento debe ser un valor booleano'),
   body('usoTokko').optional().isString().trim(),
   // NUEVOS CAMPOS - Validaciones
-  body('cantidadPropiedadesTokko').optional().isInt({ min: 0 }).withMessage('Cantidad de propiedades debe ser un número positivo'),
-  body('linksTokko').optional().isString().trim(),
-  body('dificultadTokko').optional().isBoolean().withMessage('Dificultad Tokko debe ser un valor booleano'),
-  body('detalleDificultadTokko').optional().isString().trim(),
-  body('observaciones').optional().isString().trim()
+  body('cantidadPropiedadesTokko').optional({ nullable: true, checkFalsy: true }).isInt({ min: 0 }).withMessage('Cantidad de propiedades debe ser un número positivo'),
+  body('linksTokko').optional({ nullable: true, checkFalsy: true }).isString().trim(),
+  body('dificultadTokko').optional({ nullable: true, checkFalsy: true }).isBoolean().withMessage('Dificultad Tokko debe ser un valor booleano'),
+  body('detalleDificultadTokko').optional({ nullable: true, checkFalsy: true }).isString().trim(),
+  body('observaciones').optional({ nullable: true, checkFalsy: true }).isString().trim()
 ], async (req, res) => {
   try {
+    // Log para debugging
+    console.log('📊 Datos recibidos en POST /api/performance:', JSON.stringify(req.body, null, 2));
+    
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      console.log('❌ Errores de validación:', errors.array());
       return res.status(400).json({ 
         message: 'Datos de entrada inválidos',
         errors: errors.array()
@@ -56,11 +60,11 @@ router.post('/', authenticateToken, [
         seguimiento,
         usoTokko: usoTokko || null,
         // NUEVOS CAMPOS
-        cantidadPropiedadesTokko: cantidadPropiedadesTokko || null,
-        linksTokko: linksTokko || null,
-        dificultadTokko: dificultadTokko || null,
-        detalleDificultadTokko: detalleDificultadTokko || null,
-        observaciones: observaciones || null
+        cantidadPropiedadesTokko: cantidadPropiedadesTokko ? parseInt(cantidadPropiedadesTokko) : null,
+        linksTokko: linksTokko && linksTokko.trim() ? linksTokko.trim() : null,
+        dificultadTokko: dificultadTokko !== undefined ? Boolean(dificultadTokko) : null,
+        detalleDificultadTokko: detalleDificultadTokko && detalleDificultadTokko.trim() ? detalleDificultadTokko.trim() : null,
+        observaciones: observaciones && observaciones.trim() ? observaciones.trim() : null
       },
       include: {
         user: {
@@ -198,11 +202,11 @@ router.put('/:id', authenticateToken, [
   body('seguimiento').optional().isBoolean().withMessage('Seguimiento debe ser un valor booleano'),
   body('usoTokko').optional().isString().trim(),
   // NUEVOS CAMPOS - Validaciones para actualización
-  body('cantidadPropiedadesTokko').optional().isInt({ min: 0 }).withMessage('Cantidad de propiedades debe ser un número positivo'),
-  body('linksTokko').optional().isString().trim(),
-  body('dificultadTokko').optional().isBoolean().withMessage('Dificultad Tokko debe ser un valor booleano'),
-  body('detalleDificultadTokko').optional().isString().trim(),
-  body('observaciones').optional().isString().trim()
+  body('cantidadPropiedadesTokko').optional({ nullable: true, checkFalsy: true }).isInt({ min: 0 }).withMessage('Cantidad de propiedades debe ser un número positivo'),
+  body('linksTokko').optional({ nullable: true, checkFalsy: true }).isString().trim(),
+  body('dificultadTokko').optional({ nullable: true, checkFalsy: true }).isBoolean().withMessage('Dificultad Tokko debe ser un valor booleano'),
+  body('detalleDificultadTokko').optional({ nullable: true, checkFalsy: true }).isString().trim(),
+  body('observaciones').optional({ nullable: true, checkFalsy: true }).isString().trim()
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -253,11 +257,11 @@ router.put('/:id', authenticateToken, [
     if (usoTokko !== undefined) updateData.usoTokko = usoTokko || null;
     
     // NUEVOS CAMPOS - Actualización
-    if (cantidadPropiedadesTokko !== undefined) updateData.cantidadPropiedadesTokko = cantidadPropiedadesTokko || null;
-    if (linksTokko !== undefined) updateData.linksTokko = linksTokko || null;
-    if (dificultadTokko !== undefined) updateData.dificultadTokko = dificultadTokko || null;
-    if (detalleDificultadTokko !== undefined) updateData.detalleDificultadTokko = detalleDificultadTokko || null;
-    if (observaciones !== undefined) updateData.observaciones = observaciones || null;
+    if (cantidadPropiedadesTokko !== undefined) updateData.cantidadPropiedadesTokko = cantidadPropiedadesTokko ? parseInt(cantidadPropiedadesTokko) : null;
+    if (linksTokko !== undefined) updateData.linksTokko = linksTokko && linksTokko.trim() ? linksTokko.trim() : null;
+    if (dificultadTokko !== undefined) updateData.dificultadTokko = dificultadTokko !== undefined ? Boolean(dificultadTokko) : null;
+    if (detalleDificultadTokko !== undefined) updateData.detalleDificultadTokko = detalleDificultadTokko && detalleDificultadTokko.trim() ? detalleDificultadTokko.trim() : null;
+    if (observaciones !== undefined) updateData.observaciones = observaciones && observaciones.trim() ? observaciones.trim() : null;
 
     const performance = await prisma.performance.update({
       where: { id },
