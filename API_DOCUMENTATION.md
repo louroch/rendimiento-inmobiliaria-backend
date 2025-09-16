@@ -431,9 +431,127 @@ const exportData = await response.json();
 
 ---
 
+## 🤖 **INTEGRACIÓN CON GEMINI AI** ⭐ **NUEVO**
+
+### **Recomendaciones Generales**
+```http
+POST /api/gemini/recommendations
+```
+**Acceso:** Admin  
+**Body:**
+```json
+{
+  "userId": "optional_user_id",
+  "startDate": "2024-01-01T00:00:00.000Z",
+  "endDate": "2024-01-31T23:59:59.999Z"
+}
+```
+**Respuesta:**
+```json
+{
+  "recommendations": [
+    "**Resumen Ejecutivo**: El equipo muestra un crecimiento del 25% en operaciones cerradas...",
+    "**Top Performers**: Emiliano destaca con 40% más muestras que el promedio...",
+    "**Recomendaciones por Agente**: [recomendaciones específicas]"
+  ],
+  "metrics": {
+    "totalConsultas": 150,
+    "totalMuestras": 75,
+    "totalOperaciones": 30,
+    "conversionRates": {
+      "consultasToMuestras": "50.00",
+      "muestrasToOperaciones": "40.00"
+    }
+  }
+}
+```
+
+### **Recomendaciones Personales**
+```http
+POST /api/gemini/advisor-recommendations
+```
+**Acceso:** Autenticado (Agente)  
+**Body:**
+```json
+{
+  "startDate": "2024-01-01T00:00:00.000Z",
+  "endDate": "2024-01-31T23:59:59.999Z"
+}
+```
+**Respuesta:**
+```json
+{
+  "recommendations": [
+    "**RESUMEN EJECUTIVO**: Tu rendimiento muestra un potencial de crecimiento del 30%...",
+    "**FORTALEZAS A POTENCIAR**: Excelente seguimiento de clientes (85%)...",
+    "**MEJORAS PRIORITARIAS**: [acciones específicas para los próximos 30 días]"
+  ],
+  "personalMetrics": {
+    "totalConsultas": 45,
+    "totalMuestras": 22,
+    "totalOperaciones": 8,
+    "conversionRates": {
+      "consultasToMuestras": "48.89",
+      "muestrasToOperaciones": "36.36"
+    }
+  }
+}
+```
+
+### **Análisis Avanzado** ⭐ **NUEVO**
+```http
+POST /api/gemini/advanced-analysis
+```
+**Acceso:** Admin  
+**Body:**
+```json
+{
+  "startDate": "2024-01-01T00:00:00.000Z",
+  "endDate": "2024-01-31T23:59:59.999Z",
+  "includeTokko": true,
+  "includeWeekly": true
+}
+```
+**Respuesta:**
+```json
+{
+  "analysis": [
+    "**RESUMEN EJECUTIVO**: Análisis de 50 registros muestra patrones claros de éxito...",
+    "**TOP PERFORMERS**: Emiliano lidera con 60% de conversión muestras→operaciones...",
+    "**ANÁLISIS DE TOKKO CRM**: El uso intensivo de Tokko correlaciona con 25% más cierres..."
+  ],
+  "metrics": {
+    "totalConsultas": 300,
+    "totalMuestras": 150,
+    "totalOperaciones": 60,
+    "totalPropiedadesTokko": 450,
+    "totalDificultades": 12
+  },
+  "agentesStats": [
+    {
+      "name": "Emiliano",
+      "consultas": 80,
+      "muestras": 48,
+      "operaciones": 20,
+      "conversionConsultasMuestras": "60.0",
+      "conversionMuestrasOperaciones": "41.7",
+      "porcentajeSeguimiento": "90.0",
+      "porcentajeDificultades": "10.0"
+    }
+  ]
+}
+```
+
+---
+
 ## 🚀 **ENDPOINTS IMPLEMENTADOS**
 
-### **Desempeño Semanal:** ⭐ **NUEVO**
+### **Integración con Gemini AI:** ⭐ **NUEVO**
+✅ **POST /api/gemini/recommendations** - Recomendaciones generales del equipo  
+✅ **POST /api/gemini/advisor-recommendations** - Recomendaciones personales  
+✅ **POST /api/gemini/advanced-analysis** - Análisis avanzado con Tokko y métricas semanales  
+
+### **Desempeño Semanal:**
 ✅ **GET /api/performance/stats/weekly** - Métricas semanales generales  
 ✅ **GET /api/performance/stats/weekly/agents** - Métricas semanales por agente  
 ✅ **GET /api/performance/stats/weekly/team** - Métricas semanales consolidadas del equipo  
