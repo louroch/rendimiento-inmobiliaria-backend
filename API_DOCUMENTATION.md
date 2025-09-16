@@ -112,6 +112,45 @@ GET /api/performance
 - `page` (opcional): Página
 - `limit` (opcional): Límite por página
 
+#### **Obtener Registro por ID**
+```http
+GET /api/performance/:id
+```
+**Descripción:** Obtener datos detallados de una ficha de desempeño  
+**Acceso:** Autenticado (Agentes solo ven sus propios registros)  
+**Path Parameters:**
+- `id` (requerido): ID del registro de desempeño
+
+**Respuesta:**
+```json
+{
+  "success": true,
+  "performance": {
+    "id": "record_id",
+    "fecha": "2024-01-15T10:30:00.000Z",
+    "consultasRecibidas": 10,
+    "muestrasRealizadas": 5,
+    "operacionesCerradas": 2,
+    "seguimiento": true,
+    "usoTokko": "Diario",
+    "cantidadPropiedadesTokko": 15,
+    "linksTokko": "https://tokko.com/prop1,https://tokko.com/prop2",
+    "dificultadTokko": false,
+    "detalleDificultadTokko": null,
+    "observaciones": "Observaciones generales",
+    "createdAt": "2024-01-15T10:30:00.000Z",
+    "updatedAt": "2024-01-15T10:30:00.000Z",
+    "usuario": {
+      "id": "user_id",
+      "nombre": "Juan Pérez",
+      "email": "juan@ejemplo.com",
+      "rol": "agent"
+    }
+  },
+  "message": "Registro de desempeño obtenido exitosamente"
+}
+```
+
 ---
 
 ## 📈 **ESTADÍSTICAS GENERALES**

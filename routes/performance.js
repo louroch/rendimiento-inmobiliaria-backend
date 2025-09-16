@@ -163,7 +163,7 @@ router.get('/', authenticateToken, async (req, res) => {
 });
 
 // @route   GET /api/performance/:id
-// @desc    Obtener registro de desempeño por ID
+// @desc    Obtener registro de desempeño por ID con datos detallados
 // @access  Private
 router.get('/:id', authenticateToken, async (req, res) => {
   try {
@@ -176,7 +176,8 @@ router.get('/:id', authenticateToken, async (req, res) => {
           select: {
             id: true,
             name: true,
-            email: true
+            email: true,
+            role: true
           }
         }
       }
@@ -191,7 +192,39 @@ router.get('/:id', authenticateToken, async (req, res) => {
       return res.status(403).json({ message: 'No tienes permisos para ver este registro' });
     }
 
-    res.json({ performance });
+    // Estructurar la respuesta con todos los datos detallados
+    const performanceDetail = {
+      id: performance.id,
+      fecha: performance.fecha,
+      // Métricas principales
+      consultasRecibidas: performance.consultasRecibidas,
+      muestrasRealizadas: performance.muestrasRealizadas,
+      operacionesCerradas: performance.operacionesCerradas,
+      seguimiento: performance.seguimiento,
+      // Datos de Tokko
+      usoTokko: performance.usoTokko,
+      cantidadPropiedadesTokko: performance.cantidadPropiedadesTokko,
+      linksTokko: performance.linksTokko,
+      dificultadTokko: performance.dificultadTokko,
+      detalleDificultadTokko: performance.detalleDificultadTokko,
+      observaciones: performance.observaciones,
+      // Metadatos
+      createdAt: performance.createdAt,
+      updatedAt: performance.updatedAt,
+      // Usuario (nombre + email)
+      usuario: {
+        id: performance.user.id,
+        nombre: performance.user.name,
+        email: performance.user.email,
+        rol: performance.user.role
+      }
+    };
+
+    res.json({ 
+      success: true,
+      performance: performanceDetail,
+      message: 'Registro de desempeño obtenido exitosamente'
+    });
   } catch (error) {
     console.error('Error obteniendo registro de desempeño:', error);
     res.status(500).json({ message: 'Error interno del servidor' });
