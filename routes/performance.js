@@ -2,6 +2,13 @@ const express = require('express');
 const { body, validationResult } = require('express-validator');
 const { prisma } = require('../config/database');
 const { authenticateToken, requireAdmin } = require('../middleware/auth');
+const { 
+  getWeekRange, 
+  getPreviousWeekRange, 
+  getWeekNumber, 
+  formatDate, 
+  calculateChange 
+} = require('../utils/weeklyUtils');
 
 const router = express.Router();
 
@@ -568,6 +575,602 @@ router.get('/stats/tokko', authenticateToken, requireAdmin, async (req, res) => 
     });
   } catch (error) {
     console.error('Error obteniendo métricas de Tokko:', error);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
+// @route   GET /api/performance/stats/weekly
+// @desc    Obtener métricas semanales generales
+// @access  Private (Admin)
+router.get('/stats/weekly', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { date, weekNumber, year } = req.query;
+    
+    // Determinar la semana a analizar
+    let weekRange;
+    if (weekNumber && year) {
+      weekRange = getWeekRangeByNumber(parseInt(year), parseInt(weekNumber));
+    } else if (date) {
+      weekRange = getWeekRange(new Date(date));
+    } else {
+      weekRange = getWeekRange(new Date()); // Semana actual
+    }
+    
+    const previousWeekRange = getPreviousWeekRange(weekRange.start);
+    
+    // Obtener métricas de la semana actual
+    const currentWeekStats = await prisma.performance.aggregate({
+      where: {
+        fecha: {
+          gte: weekRange.start,
+          lte: weekRange.end
+        }
+      },
+      _sum: {
+        consultasRecibidas: true,
+        muestrasRealizadas: true,
+        operacionesCerradas: true,
+        cantidadPropiedadesTokko: true
+      },
+      _avg: {
+        consultasRecibidas: true,
+        muestrasRealizadas: true,
+        operacionesCerradas: true,
+        cantidadPropiedadesTokko: true
+      },
+      _count: {
+        id: true
+      }
+    });
+    
+    // Obtener métricas de la semana anterior
+    const previousWeekStats = await prisma.performance.aggregate({
+      where: {
+        fecha: {
+          gte: previousWeekRange.start,
+          lte: previousWeekRange.end
+        }
+      },
+      _sum: {
+        consultasRecibidas: true,
+        muestrasRealizadas: true,
+        operacionesCerradas: true,
+        cantidadPropiedadesTokko: true
+      },
+      _count: {
+        id: true
+      }
+    });
+    
+    // Obtener métricas de seguimiento
+    const seguimientoStats = await prisma.performance.groupBy({
+      by: ['seguimiento'],
+      where: {
+        fecha: {
+          gte: weekRange.start,
+          lte: weekRange.end
+        }
+      },
+      _count: {
+        seguimiento: true
+      }
+    });
+    
+    // Obtener métricas de dificultad Tokko
+    const dificultadStats = await prisma.performance.groupBy({
+      by: ['dificultadTokko'],
+      where: {
+        fecha: {
+          gte: weekRange.start,
+          lte: weekRange.end
+        },
+        dificultadTokko: { not: null }
+      },
+      _count: {
+        dificultadTokko: true
+      }
+    });
+    
+    // Calcular porcentaje de seguimiento
+    const totalSeguimiento = seguimientoStats.reduce((sum, stat) => sum + stat._count.seguimiento, 0);
+    const seguimientoRealizado = seguimientoStats.find(stat => stat.seguimiento === true)?._count.seguimiento || 0;
+    const porcentajeSeguimiento = totalSeguimiento > 0 ? Math.round((seguimientoRealizado / totalSeguimiento) * 100) : 0;
+    
+    // Calcular porcentaje de dificultad
+    const totalDificultad = dificultadStats.reduce((sum, stat) => sum + stat._count.dificultadTokko, 0);
+    const dificultadSi = dificultadStats.find(stat => stat.dificultadTokko === true)?._count.dificultadTokko || 0;
+    const porcentajeDificultad = totalDificultad > 0 ? Math.round((dificultadSi / totalDificultad) * 100) : 0;
+    
+    // Calcular cambios vs semana anterior
+    const cambios = {
+      consultas: calculateChange(
+        currentWeekStats._sum.consultasRecibidas || 0,
+        previousWeekStats._sum.consultasRecibidas || 0
+      ),
+      muestras: calculateChange(
+        currentWeekStats._sum.muestrasRealizadas || 0,
+        previousWeekStats._sum.muestrasRealizadas || 0
+      ),
+      operaciones: calculateChange(
+        currentWeekStats._sum.operacionesCerradas || 0,
+        previousWeekStats._sum.operacionesCerradas || 0
+      ),
+      propiedades: calculateChange(
+        currentWeekStats._sum.cantidadPropiedadesTokko || 0,
+        previousWeekStats._sum.cantidadPropiedadesTokko || 0
+      )
+    };
+    
+    res.json({
+      semana: {
+        numero: getWeekNumber(weekRange.start),
+        inicio: weekRange.start,
+        fin: weekRange.end,
+        inicioFormateado: formatDate(weekRange.start),
+        finFormateado: formatDate(weekRange.end)
+      },
+      resumen: {
+        totalRegistros: currentWeekStats._count.id || 0,
+        consultasRecibidas: currentWeekStats._sum.consultasRecibidas || 0,
+        muestrasRealizadas: currentWeekStats._sum.muestrasRealizadas || 0,
+        operacionesCerradas: currentWeekStats._sum.operacionesCerradas || 0,
+        propiedadesTokko: currentWeekStats._sum.cantidadPropiedadesTokko || 0,
+        porcentajeSeguimiento,
+        porcentajeDificultad
+      },
+      promedios: {
+        consultasPorDia: Math.round((currentWeekStats._avg.consultasRecibidas || 0) * 7),
+        muestrasPorDia: Math.round((currentWeekStats._avg.muestrasRealizadas || 0) * 7),
+        operacionesPorDia: Math.round((currentWeekStats._avg.operacionesCerradas || 0) * 7),
+        propiedadesPorDia: Math.round((currentWeekStats._avg.cantidadPropiedadesTokko || 0) * 7)
+      },
+      cambios,
+      semanaAnterior: {
+        inicio: previousWeekRange.start,
+        fin: previousWeekRange.end,
+        totalRegistros: previousWeekStats._count.id || 0,
+        consultasRecibidas: previousWeekStats._sum.consultasRecibidas || 0,
+        muestrasRealizadas: previousWeekStats._sum.muestrasRealizadas || 0,
+        operacionesCerradas: previousWeekStats._sum.operacionesCerradas || 0,
+        propiedadesTokko: previousWeekStats._sum.cantidadPropiedadesTokko || 0
+      }
+    });
+  } catch (error) {
+    console.error('Error obteniendo métricas semanales:', error);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
+// @route   GET /api/performance/stats/weekly/agents
+// @desc    Obtener métricas semanales por agente
+// @access  Private (Admin)
+router.get('/stats/weekly/agents', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { date, weekNumber, year } = req.query;
+    
+    // Determinar la semana a analizar
+    let weekRange;
+    if (weekNumber && year) {
+      weekRange = getWeekRangeByNumber(parseInt(year), parseInt(weekNumber));
+    } else if (date) {
+      weekRange = getWeekRange(new Date(date));
+    } else {
+      weekRange = getWeekRange(new Date()); // Semana actual
+    }
+    
+    const previousWeekRange = getPreviousWeekRange(weekRange.start);
+    
+    // Obtener métricas por agente de la semana actual
+    const currentWeekAgentStats = await prisma.performance.groupBy({
+      by: ['userId'],
+      where: {
+        fecha: {
+          gte: weekRange.start,
+          lte: weekRange.end
+        }
+      },
+      _sum: {
+        consultasRecibidas: true,
+        muestrasRealizadas: true,
+        operacionesCerradas: true,
+        cantidadPropiedadesTokko: true
+      },
+      _avg: {
+        consultasRecibidas: true,
+        muestrasRealizadas: true,
+        operacionesCerradas: true,
+        cantidadPropiedadesTokko: true
+      },
+      _count: {
+        id: true
+      }
+    });
+    
+    // Obtener métricas por agente de la semana anterior
+    const previousWeekAgentStats = await prisma.performance.groupBy({
+      by: ['userId'],
+      where: {
+        fecha: {
+          gte: previousWeekRange.start,
+          lte: previousWeekRange.end
+        }
+      },
+      _sum: {
+        consultasRecibidas: true,
+        muestrasRealizadas: true,
+        operacionesCerradas: true,
+        cantidadPropiedadesTokko: true
+      },
+      _count: {
+        id: true
+      }
+    });
+    
+    // Obtener información de usuarios
+    const userIds = currentWeekAgentStats.map(stat => stat.userId);
+    const users = await prisma.user.findMany({
+      where: { id: { in: userIds } },
+      select: { id: true, name: true, email: true, role: true }
+    });
+    
+    // Combinar datos de agentes con información de usuarios
+    const agentesConDatos = currentWeekAgentStats.map(currentStat => {
+      const user = users.find(u => u.id === currentStat.userId);
+      const previousStat = previousWeekAgentStats.find(p => p.userId === currentStat.userId);
+      
+      // Calcular cambios vs semana anterior
+      const cambios = {
+        consultas: calculateChange(
+          currentStat._sum.consultasRecibidas || 0,
+          previousStat?._sum.consultasRecibidas || 0
+        ),
+        muestras: calculateChange(
+          currentStat._sum.muestrasRealizadas || 0,
+          previousStat?._sum.muestrasRealizadas || 0
+        ),
+        operaciones: calculateChange(
+          currentStat._sum.operacionesCerradas || 0,
+          previousStat?._sum.operacionesCerradas || 0
+        ),
+        propiedades: calculateChange(
+          currentStat._sum.cantidadPropiedadesTokko || 0,
+          previousStat?._sum.cantidadPropiedadesTokko || 0
+        )
+      };
+      
+      return {
+        agente: user || { id: currentStat.userId, name: 'Usuario no encontrado', email: 'N/A', role: 'agent' },
+        semanaActual: {
+          totalRegistros: currentStat._count.id,
+          consultasRecibidas: currentStat._sum.consultasRecibidas || 0,
+          muestrasRealizadas: currentStat._sum.muestrasRealizadas || 0,
+          operacionesCerradas: currentStat._sum.operacionesCerradas || 0,
+          propiedadesTokko: currentStat._sum.cantidadPropiedadesTokko || 0,
+          promedioConsultas: Math.round(currentStat._avg.consultasRecibidas || 0),
+          promedioMuestras: Math.round(currentStat._avg.muestrasRealizadas || 0),
+          promedioOperaciones: Math.round(currentStat._avg.operacionesCerradas || 0),
+          promedioPropiedades: Math.round(currentStat._avg.cantidadPropiedadesTokko || 0)
+        },
+        semanaAnterior: {
+          totalRegistros: previousStat?._count.id || 0,
+          consultasRecibidas: previousStat?._sum.consultasRecibidas || 0,
+          muestrasRealizadas: previousStat?._sum.muestrasRealizadas || 0,
+          operacionesCerradas: previousStat?._sum.operacionesCerradas || 0,
+          propiedadesTokko: previousStat?._sum.cantidadPropiedadesTokko || 0
+        },
+        cambios
+      };
+    });
+    
+    // Ordenar por total de consultas (ranking)
+    agentesConDatos.sort((a, b) => b.semanaActual.consultasRecibidas - a.semanaActual.consultasRecibidas);
+    
+    res.json({
+      semana: {
+        numero: getWeekNumber(weekRange.start),
+        inicio: weekRange.start,
+        fin: weekRange.end,
+        inicioFormateado: formatDate(weekRange.start),
+        finFormateado: formatDate(weekRange.end)
+      },
+      agentes: agentesConDatos,
+      totalAgentes: agentesConDatos.length
+    });
+  } catch (error) {
+    console.error('Error obteniendo métricas semanales por agente:', error);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
+// @route   GET /api/performance/stats/weekly/team
+// @desc    Obtener métricas semanales consolidadas del equipo
+// @access  Private (Admin)
+router.get('/stats/weekly/team', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { date, weekNumber, year } = req.query;
+    
+    // Determinar la semana a analizar
+    let weekRange;
+    if (weekNumber && year) {
+      weekRange = getWeekRangeByNumber(parseInt(year), parseInt(weekNumber));
+    } else if (date) {
+      weekRange = getWeekRange(new Date(date));
+    } else {
+      weekRange = getWeekRange(new Date()); // Semana actual
+    }
+    
+    const previousWeekRange = getPreviousWeekRange(weekRange.start);
+    
+    // Obtener métricas consolidadas de la semana actual
+    const currentWeekStats = await prisma.performance.aggregate({
+      where: {
+        fecha: {
+          gte: weekRange.start,
+          lte: weekRange.end
+        }
+      },
+      _sum: {
+        consultasRecibidas: true,
+        muestrasRealizadas: true,
+        operacionesCerradas: true,
+        cantidadPropiedadesTokko: true
+      },
+      _avg: {
+        consultasRecibidas: true,
+        muestrasRealizadas: true,
+        operacionesCerradas: true,
+        cantidadPropiedadesTokko: true
+      },
+      _count: {
+        id: true
+      }
+    });
+    
+    // Obtener métricas consolidadas de la semana anterior
+    const previousWeekStats = await prisma.performance.aggregate({
+      where: {
+        fecha: {
+          gte: previousWeekRange.start,
+          lte: previousWeekRange.end
+        }
+      },
+      _sum: {
+        consultasRecibidas: true,
+        muestrasRealizadas: true,
+        operacionesCerradas: true,
+        cantidadPropiedadesTokko: true
+      },
+      _count: {
+        id: true
+      }
+    });
+    
+    // Obtener métricas por agente para ranking
+    const agentStats = await prisma.performance.groupBy({
+      by: ['userId'],
+      where: {
+        fecha: {
+          gte: weekRange.start,
+          lte: weekRange.end
+        }
+      },
+      _sum: {
+        consultasRecibidas: true,
+        muestrasRealizadas: true,
+        operacionesCerradas: true,
+        cantidadPropiedadesTokko: true
+      },
+      _count: {
+        id: true
+      }
+    });
+    
+    // Obtener información de usuarios para el ranking
+    const userIds = agentStats.map(stat => stat.userId);
+    const users = await prisma.user.findMany({
+      where: { id: { in: userIds } },
+      select: { id: true, name: true, email: true }
+    });
+    
+    // Crear ranking de agentes
+    const ranking = agentStats.map(stat => {
+      const user = users.find(u => u.id === stat.userId);
+      return {
+        agente: user || { id: stat.userId, name: 'Usuario no encontrado', email: 'N/A' },
+        consultas: stat._sum.consultasRecibidas || 0,
+        muestras: stat._sum.muestrasRealizadas || 0,
+        operaciones: stat._sum.operacionesCerradas || 0,
+        propiedades: stat._sum.cantidadPropiedadesTokko || 0,
+        registros: stat._count.id
+      };
+    }).sort((a, b) => b.consultas - a.consultas);
+    
+    // Calcular cambios vs semana anterior
+    const cambios = {
+      consultas: calculateChange(
+        currentWeekStats._sum.consultasRecibidas || 0,
+        previousWeekStats._sum.consultasRecibidas || 0
+      ),
+      muestras: calculateChange(
+        currentWeekStats._sum.muestrasRealizadas || 0,
+        previousWeekStats._sum.muestrasRealizadas || 0
+      ),
+      operaciones: calculateChange(
+        currentWeekStats._sum.operacionesCerradas || 0,
+        previousWeekStats._sum.operacionesCerradas || 0
+      ),
+      propiedades: calculateChange(
+        currentWeekStats._sum.cantidadPropiedadesTokko || 0,
+        previousWeekStats._sum.cantidadPropiedadesTokko || 0
+      )
+    };
+    
+    // Calcular tasas de conversión
+    const totalConsultas = currentWeekStats._sum.consultasRecibidas || 0;
+    const totalMuestras = currentWeekStats._sum.muestrasRealizadas || 0;
+    const totalOperaciones = currentWeekStats._sum.operacionesCerradas || 0;
+    
+    const tasasConversion = {
+      consultasToMuestras: totalConsultas > 0 ? Math.round((totalMuestras / totalConsultas) * 100) : 0,
+      muestrasToOperaciones: totalMuestras > 0 ? Math.round((totalOperaciones / totalMuestras) * 100) : 0,
+      consultasToOperaciones: totalConsultas > 0 ? Math.round((totalOperaciones / totalConsultas) * 100) : 0
+    };
+    
+    res.json({
+      semana: {
+        numero: getWeekNumber(weekRange.start),
+        inicio: weekRange.start,
+        fin: weekRange.end,
+        inicioFormateado: formatDate(weekRange.start),
+        finFormateado: formatDate(weekRange.end)
+      },
+      equipo: {
+        totalAgentes: ranking.length,
+        totalRegistros: currentWeekStats._count.id || 0,
+        consultasRecibidas: currentWeekStats._sum.consultasRecibidas || 0,
+        muestrasRealizadas: currentWeekStats._sum.muestrasRealizadas || 0,
+        operacionesCerradas: currentWeekStats._sum.operacionesCerradas || 0,
+        propiedadesTokko: currentWeekStats._sum.cantidadPropiedadesTokko || 0,
+        promedioPorAgente: {
+          consultas: Math.round((currentWeekStats._avg.consultasRecibidas || 0) * ranking.length),
+          muestras: Math.round((currentWeekStats._avg.muestrasRealizadas || 0) * ranking.length),
+          operaciones: Math.round((currentWeekStats._avg.operacionesCerradas || 0) * ranking.length),
+          propiedades: Math.round((currentWeekStats._avg.cantidadPropiedadesTokko || 0) * ranking.length)
+        }
+      },
+      tasasConversion,
+      cambios,
+      ranking: ranking.slice(0, 10), // Top 10 agentes
+      semanaAnterior: {
+        totalRegistros: previousWeekStats._count.id || 0,
+        consultasRecibidas: previousWeekStats._sum.consultasRecibidas || 0,
+        muestrasRealizadas: previousWeekStats._sum.muestrasRealizadas || 0,
+        operacionesCerradas: previousWeekStats._sum.operacionesCerradas || 0,
+        propiedadesTokko: previousWeekStats._sum.cantidadPropiedadesTokko || 0
+      }
+    });
+  } catch (error) {
+    console.error('Error obteniendo métricas semanales del equipo:', error);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
+// @route   GET /api/performance/stats/weekly/export
+// @desc    Obtener datos para exportación PDF de métricas semanales
+// @access  Private (Admin)
+router.get('/stats/weekly/export', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { date, weekNumber, year, format = 'pdf' } = req.query;
+    
+    // Determinar la semana a analizar
+    let weekRange;
+    if (weekNumber && year) {
+      weekRange = getWeekRangeByNumber(parseInt(year), parseInt(weekNumber));
+    } else if (date) {
+      weekRange = getWeekRange(new Date(date));
+    } else {
+      weekRange = getWeekRange(new Date()); // Semana actual
+    }
+    
+    // Obtener métricas generales
+    const generalStats = await prisma.performance.aggregate({
+      where: {
+        fecha: {
+          gte: weekRange.start,
+          lte: weekRange.end
+        }
+      },
+      _sum: {
+        consultasRecibidas: true,
+        muestrasRealizadas: true,
+        operacionesCerradas: true,
+        cantidadPropiedadesTokko: true
+      },
+      _count: {
+        id: true
+      }
+    });
+    
+    // Obtener métricas por agente
+    const agentStats = await prisma.performance.groupBy({
+      by: ['userId'],
+      where: {
+        fecha: {
+          gte: weekRange.start,
+          lte: weekRange.end
+        }
+      },
+      _sum: {
+        consultasRecibidas: true,
+        muestrasRealizadas: true,
+        operacionesCerradas: true,
+        cantidadPropiedadesTokko: true
+      },
+      _count: {
+        id: true
+      }
+    });
+    
+    // Obtener información de usuarios
+    const userIds = agentStats.map(stat => stat.userId);
+    const users = await prisma.user.findMany({
+      where: { id: { in: userIds } },
+      select: { id: true, name: true, email: true }
+    });
+    
+    // Preparar datos para exportación
+    const exportData = {
+      metadata: {
+        semana: {
+          numero: getWeekNumber(weekRange.start),
+          inicio: weekRange.start,
+          fin: weekRange.end,
+          inicioFormateado: formatDate(weekRange.start),
+          finFormateado: formatDate(weekRange.end)
+        },
+        generado: new Date(),
+        formato: format
+      },
+      resumen: {
+        totalRegistros: generalStats._count.id || 0,
+        consultasRecibidas: generalStats._sum.consultasRecibidas || 0,
+        muestrasRealizadas: generalStats._sum.muestrasRealizadas || 0,
+        operacionesCerradas: generalStats._sum.operacionesCerradas || 0,
+        propiedadesTokko: generalStats._sum.cantidadPropiedadesTokko || 0
+      },
+      agentes: agentStats.map(stat => {
+        const user = users.find(u => u.id === stat.userId);
+        return {
+          agente: user || { name: 'Usuario no encontrado', email: 'N/A' },
+          consultas: stat._sum.consultasRecibidas || 0,
+          muestras: stat._sum.muestrasRealizadas || 0,
+          operaciones: stat._sum.operacionesCerradas || 0,
+          propiedades: stat._sum.cantidadPropiedadesTokko || 0,
+          registros: stat._count.id
+        };
+      }).sort((a, b) => b.consultas - a.consultas)
+    };
+    
+    if (format === 'json') {
+      res.json(exportData);
+    } else {
+      // Para PDF, devolver datos estructurados que el frontend puede usar
+      res.json({
+        success: true,
+        data: exportData,
+        message: 'Datos listos para generación de PDF',
+        instructions: {
+          frontend: 'Usar estos datos con una librería como jsPDF o react-pdf',
+          campos: [
+            'metadata.semana - Información de la semana',
+            'resumen - Métricas generales del equipo',
+            'agentes - Lista de agentes con sus métricas'
+          ]
+        }
+      });
+    }
+  } catch (error) {
+    console.error('Error obteniendo datos para exportación:', error);
     res.status(500).json({ message: 'Error interno del servidor' });
   }
 });
