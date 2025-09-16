@@ -247,4 +247,162 @@ router.get('/stats', [
   }
 });
 
+// @route   GET /api/records/stats/tokko
+// @desc    Obtener métricas específicas de Tokko CRM (solo admin)
+// @access  Private (Admin)
+router.get('/stats/tokko', [
+  authenticateToken,
+  requireRole('admin')
+], async (req, res) => {
+  try {
+    const { startDate, endDate, userId } = req.query;
+    
+    const where = {};
+    if (userId) where.userId = userId;
+    if (startDate || endDate) {
+      where.fecha = {};
+      if (startDate) where.fecha.gte = new Date(startDate);
+      if (endDate) where.fecha.lte = new Date(endDate);
+    }
+
+    // Obtener registros con datos de Tokko
+    const tokkoRecords = await prisma.performance.findMany({
+      where: {
+        ...where,
+        OR: [
+          { cantidadPropiedadesTokko: { not: null } },
+          { dificultadTokko: { not: null } },
+          { usoTokko: { not: null } }
+        ]
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+          }
+        }
+      },
+      orderBy: {
+        fecha: 'desc'
+      }
+    });
+
+    // Calcular métricas de propiedades cargadas
+    const propiedadesStats = await prisma.performance.aggregate({
+      where: {
+        ...where,
+        cantidadPropiedadesTokko: { not: null }
+      },
+      _sum: {
+        cantidadPropiedadesTokko: true
+      },
+      _avg: {
+        cantidadPropiedadesTokko: true
+      },
+      _count: {
+        cantidadPropiedadesTokko: true
+      }
+    });
+
+    // Calcular métricas de dificultad
+    const dificultadStats = await prisma.performance.groupBy({
+      by: ['dificultadTokko'],
+      where: {
+        ...where,
+        dificultadTokko: { not: null }
+      },
+      _count: {
+        dificultadTokko: true
+      }
+    });
+
+    // Calcular métricas de uso de Tokko
+    const usoTokkoStats = await prisma.performance.groupBy({
+      by: ['usoTokko'],
+      where: {
+        ...where,
+        usoTokko: { not: null }
+      },
+      _count: {
+        usoTokko: true
+      }
+    });
+
+    // Obtener detalles de dificultades
+    const dificultadesDetalladas = await prisma.performance.findMany({
+      where: {
+        ...where,
+        dificultadTokko: true,
+        detalleDificultadTokko: { not: null }
+      },
+      select: {
+        detalleDificultadTokko: true,
+        fecha: true,
+        user: {
+          select: {
+            name: true
+          }
+        }
+      },
+      orderBy: {
+        fecha: 'desc'
+      }
+    });
+
+    // Procesar estadísticas de dificultad
+    const dificultadResumen = {
+      total: dificultadStats.reduce((sum, stat) => sum + stat._count.dificultadTokko, 0),
+      si: dificultadStats.find(stat => stat.dificultadTokko === true)?._count.dificultadTokko || 0,
+      no: dificultadStats.find(stat => stat.dificultadTokko === false)?._count.dificultadTokko || 0
+    };
+
+    // Calcular porcentajes
+    const porcentajeDificultad = {
+      si: dificultadResumen.total > 0 ? Math.round((dificultadResumen.si / dificultadResumen.total) * 100) : 0,
+      no: dificultadResumen.total > 0 ? Math.round((dificultadResumen.no / dificultadResumen.total) * 100) : 0
+    };
+
+    res.json({
+      resumen: {
+        totalRegistrosConTokko: tokkoRecords.length,
+        totalPropiedadesCargadas: propiedadesStats._sum.cantidadPropiedadesTokko || 0,
+        promedioPropiedadesPorRegistro: Math.round(propiedadesStats._avg.cantidadPropiedadesTokko || 0),
+        totalRegistrosConPropiedades: propiedadesStats._count.cantidadPropiedadesTokko || 0
+      },
+      dificultadUso: {
+        ...dificultadResumen,
+        porcentajes: porcentajeDificultad
+      },
+      usoTokko: {
+        totalRegistros: usoTokkoStats.reduce((sum, stat) => sum + stat._count.usoTokko, 0),
+        distribucion: usoTokkoStats.map(stat => ({
+          tipo: stat.usoTokko,
+          cantidad: stat._count.usoTokko
+        }))
+      },
+      dificultadesDetalladas: dificultadesDetalladas.map(d => ({
+        detalle: d.detalleDificultadTokko,
+        fecha: d.fecha,
+        agente: d.user.name
+      })),
+      registros: tokkoRecords.map(record => ({
+        id: record.id,
+        fecha: record.fecha,
+        agente: record.user,
+        cantidadPropiedades: record.cantidadPropiedadesTokko,
+        dificultad: record.dificultadTokko,
+        detalleDificultad: record.detalleDificultadTokko,
+        usoTokko: record.usoTokko,
+        observaciones: record.observaciones
+      }))
+    });
+
+  } catch (error) {
+    console.error('Error obteniendo métricas de Tokko:', error);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
 module.exports = router;
