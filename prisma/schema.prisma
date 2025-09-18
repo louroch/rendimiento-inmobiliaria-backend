@@ -32,6 +32,7 @@ model Performance {
   consultasRecibidas  Int
   muestrasRealizadas  Int
   operacionesCerradas Int
+  numeroCaptaciones   Int?     // Número de captaciones realizadas
   seguimiento         Boolean  @default(false)
   usoTokko            String?
   

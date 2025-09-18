@@ -20,6 +20,7 @@ router.post('/', authenticateToken, [
   body('consultasRecibidas').isInt({ min: 0 }).withMessage('Consultas recibidas debe ser un número positivo'),
   body('muestrasRealizadas').isInt({ min: 0 }).withMessage('Muestras realizadas debe ser un número positivo'),
   body('operacionesCerradas').isInt({ min: 0 }).withMessage('Operaciones cerradas debe ser un número positivo'),
+  body('numeroCaptaciones').optional({ nullable: true, checkFalsy: true }).isInt({ min: 0 }).withMessage('Número de captaciones debe ser un número positivo'),
   body('seguimiento').isBoolean().withMessage('Seguimiento debe ser un valor booleano'),
   body('usoTokko').optional().isString().trim(),
   // NUEVOS CAMPOS - Validaciones
@@ -47,6 +48,7 @@ router.post('/', authenticateToken, [
       consultasRecibidas,
       muestrasRealizadas,
       operacionesCerradas,
+      numeroCaptaciones,
       seguimiento,
       usoTokko,
       // NUEVOS CAMPOS
@@ -64,6 +66,7 @@ router.post('/', authenticateToken, [
         consultasRecibidas,
         muestrasRealizadas,
         operacionesCerradas,
+        numeroCaptaciones: numeroCaptaciones ? parseInt(numeroCaptaciones) : null,
         seguimiento,
         usoTokko: usoTokko || null,
         // NUEVOS CAMPOS
@@ -200,6 +203,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
       consultasRecibidas: performance.consultasRecibidas,
       muestrasRealizadas: performance.muestrasRealizadas,
       operacionesCerradas: performance.operacionesCerradas,
+      numeroCaptaciones: performance.numeroCaptaciones,
       seguimiento: performance.seguimiento,
       // Datos de Tokko
       usoTokko: performance.usoTokko,
@@ -239,6 +243,7 @@ router.put('/:id', authenticateToken, [
   body('consultasRecibidas').optional().isInt({ min: 0 }).withMessage('Consultas recibidas debe ser un número positivo'),
   body('muestrasRealizadas').optional().isInt({ min: 0 }).withMessage('Muestras realizadas debe ser un número positivo'),
   body('operacionesCerradas').optional().isInt({ min: 0 }).withMessage('Operaciones cerradas debe ser un número positivo'),
+  body('numeroCaptaciones').optional({ nullable: true, checkFalsy: true }).isInt({ min: 0 }).withMessage('Número de captaciones debe ser un número positivo'),
   body('seguimiento').optional().isBoolean().withMessage('Seguimiento debe ser un valor booleano'),
   body('usoTokko').optional().isString().trim(),
   // NUEVOS CAMPOS - Validaciones para actualización
@@ -279,6 +284,7 @@ router.put('/:id', authenticateToken, [
       consultasRecibidas, 
       muestrasRealizadas, 
       operacionesCerradas, 
+      numeroCaptaciones,
       seguimiento, 
       usoTokko,
       // NUEVOS CAMPOS
@@ -293,6 +299,7 @@ router.put('/:id', authenticateToken, [
     if (consultasRecibidas !== undefined) updateData.consultasRecibidas = consultasRecibidas;
     if (muestrasRealizadas !== undefined) updateData.muestrasRealizadas = muestrasRealizadas;
     if (operacionesCerradas !== undefined) updateData.operacionesCerradas = operacionesCerradas;
+    if (numeroCaptaciones !== undefined) updateData.numeroCaptaciones = numeroCaptaciones ? parseInt(numeroCaptaciones) : null;
     if (seguimiento !== undefined) updateData.seguimiento = seguimiento;
     if (usoTokko !== undefined) updateData.usoTokko = usoTokko || null;
     
@@ -379,12 +386,14 @@ router.get('/stats/overview', authenticateToken, requireAdmin, async (req, res) 
       _sum: {
         consultasRecibidas: true,
         muestrasRealizadas: true,
-        operacionesCerradas: true
+        operacionesCerradas: true,
+        numeroCaptaciones: true
       },
       _avg: {
         consultasRecibidas: true,
         muestrasRealizadas: true,
-        operacionesCerradas: true
+        operacionesCerradas: true,
+        numeroCaptaciones: true
       }
     });
 
@@ -405,12 +414,14 @@ router.get('/stats/overview', authenticateToken, requireAdmin, async (req, res) 
       totals: {
         consultasRecibidas: stats._sum.consultasRecibidas || 0,
         muestrasRealizadas: stats._sum.muestrasRealizadas || 0,
-        operacionesCerradas: stats._sum.operacionesCerradas || 0
+        operacionesCerradas: stats._sum.operacionesCerradas || 0,
+        numeroCaptaciones: stats._sum.numeroCaptaciones || 0
       },
       averages: {
         consultasRecibidas: Math.round(stats._avg.consultasRecibidas || 0),
         muestrasRealizadas: Math.round(stats._avg.muestrasRealizadas || 0),
-        operacionesCerradas: Math.round(stats._avg.operacionesCerradas || 0)
+        operacionesCerradas: Math.round(stats._avg.operacionesCerradas || 0),
+        numeroCaptaciones: Math.round(stats._avg.numeroCaptaciones || 0)
       },
       conversionRates
     });
@@ -734,6 +745,10 @@ router.get('/stats/weekly', authenticateToken, requireAdmin, async (req, res) =>
         currentWeekStats._sum.operacionesCerradas || 0,
         previousWeekStats._sum.operacionesCerradas || 0
       ),
+      captaciones: calculateChange(
+        currentWeekStats._sum.numeroCaptaciones || 0,
+        previousWeekStats._sum.numeroCaptaciones || 0
+      ),
       propiedades: calculateChange(
         currentWeekStats._sum.cantidadPropiedadesTokko || 0,
         previousWeekStats._sum.cantidadPropiedadesTokko || 0
@@ -753,6 +768,7 @@ router.get('/stats/weekly', authenticateToken, requireAdmin, async (req, res) =>
         consultasRecibidas: currentWeekStats._sum.consultasRecibidas || 0,
         muestrasRealizadas: currentWeekStats._sum.muestrasRealizadas || 0,
         operacionesCerradas: currentWeekStats._sum.operacionesCerradas || 0,
+        numeroCaptaciones: currentWeekStats._sum.numeroCaptaciones || 0,
         propiedadesTokko: currentWeekStats._sum.cantidadPropiedadesTokko || 0,
         porcentajeSeguimiento,
         porcentajeDificultad
@@ -761,6 +777,7 @@ router.get('/stats/weekly', authenticateToken, requireAdmin, async (req, res) =>
         consultasPorDia: Math.round((currentWeekStats._avg.consultasRecibidas || 0) * 7),
         muestrasPorDia: Math.round((currentWeekStats._avg.muestrasRealizadas || 0) * 7),
         operacionesPorDia: Math.round((currentWeekStats._avg.operacionesCerradas || 0) * 7),
+        captacionesPorDia: Math.round((currentWeekStats._avg.numeroCaptaciones || 0) * 7),
         propiedadesPorDia: Math.round((currentWeekStats._avg.cantidadPropiedadesTokko || 0) * 7)
       },
       cambios,
@@ -771,6 +788,7 @@ router.get('/stats/weekly', authenticateToken, requireAdmin, async (req, res) =>
         consultasRecibidas: previousWeekStats._sum.consultasRecibidas || 0,
         muestrasRealizadas: previousWeekStats._sum.muestrasRealizadas || 0,
         operacionesCerradas: previousWeekStats._sum.operacionesCerradas || 0,
+        numeroCaptaciones: previousWeekStats._sum.numeroCaptaciones || 0,
         propiedadesTokko: previousWeekStats._sum.cantidadPropiedadesTokko || 0
       }
     });
@@ -874,6 +892,10 @@ router.get('/stats/weekly/agents', authenticateToken, requireAdmin, async (req, 
           currentStat._sum.operacionesCerradas || 0,
           previousStat?._sum.operacionesCerradas || 0
         ),
+        captaciones: calculateChange(
+          currentStat._sum.numeroCaptaciones || 0,
+          previousStat?._sum.numeroCaptaciones || 0
+        ),
         propiedades: calculateChange(
           currentStat._sum.cantidadPropiedadesTokko || 0,
           previousStat?._sum.cantidadPropiedadesTokko || 0
@@ -887,10 +909,12 @@ router.get('/stats/weekly/agents', authenticateToken, requireAdmin, async (req, 
           consultasRecibidas: currentStat._sum.consultasRecibidas || 0,
           muestrasRealizadas: currentStat._sum.muestrasRealizadas || 0,
           operacionesCerradas: currentStat._sum.operacionesCerradas || 0,
+          numeroCaptaciones: currentStat._sum.numeroCaptaciones || 0,
           propiedadesTokko: currentStat._sum.cantidadPropiedadesTokko || 0,
           promedioConsultas: Math.round(currentStat._avg.consultasRecibidas || 0),
           promedioMuestras: Math.round(currentStat._avg.muestrasRealizadas || 0),
           promedioOperaciones: Math.round(currentStat._avg.operacionesCerradas || 0),
+          promedioCaptaciones: Math.round(currentStat._avg.numeroCaptaciones || 0),
           promedioPropiedades: Math.round(currentStat._avg.cantidadPropiedadesTokko || 0)
         },
         semanaAnterior: {
@@ -898,6 +922,7 @@ router.get('/stats/weekly/agents', authenticateToken, requireAdmin, async (req, 
           consultasRecibidas: previousStat?._sum.consultasRecibidas || 0,
           muestrasRealizadas: previousStat?._sum.muestrasRealizadas || 0,
           operacionesCerradas: previousStat?._sum.operacionesCerradas || 0,
+          numeroCaptaciones: previousStat?._sum.numeroCaptaciones || 0,
           propiedadesTokko: previousStat?._sum.cantidadPropiedadesTokko || 0
         },
         cambios
@@ -1026,6 +1051,7 @@ router.get('/stats/weekly/team', authenticateToken, requireAdmin, async (req, re
         consultas: stat._sum.consultasRecibidas || 0,
         muestras: stat._sum.muestrasRealizadas || 0,
         operaciones: stat._sum.operacionesCerradas || 0,
+        captaciones: stat._sum.numeroCaptaciones || 0,
         propiedades: stat._sum.cantidadPropiedadesTokko || 0,
         registros: stat._count.id
       };
@@ -1044,6 +1070,10 @@ router.get('/stats/weekly/team', authenticateToken, requireAdmin, async (req, re
       operaciones: calculateChange(
         currentWeekStats._sum.operacionesCerradas || 0,
         previousWeekStats._sum.operacionesCerradas || 0
+      ),
+      captaciones: calculateChange(
+        currentWeekStats._sum.numeroCaptaciones || 0,
+        previousWeekStats._sum.numeroCaptaciones || 0
       ),
       propiedades: calculateChange(
         currentWeekStats._sum.cantidadPropiedadesTokko || 0,
@@ -1076,11 +1106,13 @@ router.get('/stats/weekly/team', authenticateToken, requireAdmin, async (req, re
         consultasRecibidas: currentWeekStats._sum.consultasRecibidas || 0,
         muestrasRealizadas: currentWeekStats._sum.muestrasRealizadas || 0,
         operacionesCerradas: currentWeekStats._sum.operacionesCerradas || 0,
+        numeroCaptaciones: currentWeekStats._sum.numeroCaptaciones || 0,
         propiedadesTokko: currentWeekStats._sum.cantidadPropiedadesTokko || 0,
         promedioPorAgente: {
           consultas: Math.round((currentWeekStats._avg.consultasRecibidas || 0) * ranking.length),
           muestras: Math.round((currentWeekStats._avg.muestrasRealizadas || 0) * ranking.length),
           operaciones: Math.round((currentWeekStats._avg.operacionesCerradas || 0) * ranking.length),
+          captaciones: Math.round((currentWeekStats._avg.numeroCaptaciones || 0) * ranking.length),
           propiedades: Math.round((currentWeekStats._avg.cantidadPropiedadesTokko || 0) * ranking.length)
         }
       },
@@ -1092,6 +1124,7 @@ router.get('/stats/weekly/team', authenticateToken, requireAdmin, async (req, re
         consultasRecibidas: previousWeekStats._sum.consultasRecibidas || 0,
         muestrasRealizadas: previousWeekStats._sum.muestrasRealizadas || 0,
         operacionesCerradas: previousWeekStats._sum.operacionesCerradas || 0,
+        numeroCaptaciones: previousWeekStats._sum.numeroCaptaciones || 0,
         propiedadesTokko: previousWeekStats._sum.cantidadPropiedadesTokko || 0
       }
     });
@@ -1184,6 +1217,7 @@ router.get('/stats/weekly/export', authenticateToken, requireAdmin, async (req, 
         consultasRecibidas: generalStats._sum.consultasRecibidas || 0,
         muestrasRealizadas: generalStats._sum.muestrasRealizadas || 0,
         operacionesCerradas: generalStats._sum.operacionesCerradas || 0,
+        numeroCaptaciones: generalStats._sum.numeroCaptaciones || 0,
         propiedadesTokko: generalStats._sum.cantidadPropiedadesTokko || 0
       },
       agentes: agentStats.map(stat => {
@@ -1193,6 +1227,7 @@ router.get('/stats/weekly/export', authenticateToken, requireAdmin, async (req, 
           consultas: stat._sum.consultasRecibidas || 0,
           muestras: stat._sum.muestrasRealizadas || 0,
           operaciones: stat._sum.operacionesCerradas || 0,
+          captaciones: stat._sum.numeroCaptaciones || 0,
           propiedades: stat._sum.cantidadPropiedadesTokko || 0,
           registros: stat._count.id
         };
