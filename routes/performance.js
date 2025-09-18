@@ -55,7 +55,8 @@ router.post('/', authenticateToken, [
       linksTokko,
       dificultadTokko,
       detalleDificultadTokko,
-      observaciones
+      observaciones,
+      numeroCaptaciones
     } = req.body;
 
     const performance = await prisma.performance.create({
