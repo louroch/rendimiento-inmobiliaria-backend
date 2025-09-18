@@ -27,7 +27,8 @@ router.post('/', authenticateToken, [
   body('linksTokko').optional({ nullable: true, checkFalsy: true }).isString().trim(),
   body('dificultadTokko').optional({ nullable: true, checkFalsy: true }).isBoolean().withMessage('Dificultad Tokko debe ser un valor booleano'),
   body('detalleDificultadTokko').optional({ nullable: true, checkFalsy: true }).isString().trim(),
-  body('observaciones').optional({ nullable: true, checkFalsy: true }).isString().trim()
+  body('observaciones').optional({ nullable: true, checkFalsy: true }).isString().trim(),
+  body('numeroCaptaciones').optional({ nullable: true, checkFalsy: true }).isInt({ min: 0 }).withMessage('Número de captaciones debe ser un número positivo')
 ], async (req, res) => {
   try {
     // Log para debugging
@@ -71,7 +72,8 @@ router.post('/', authenticateToken, [
         linksTokko: linksTokko && linksTokko.trim() ? linksTokko.trim() : null,
         dificultadTokko: dificultadTokko !== undefined ? Boolean(dificultadTokko) : null,
         detalleDificultadTokko: detalleDificultadTokko && detalleDificultadTokko.trim() ? detalleDificultadTokko.trim() : null,
-        observaciones: observaciones && observaciones.trim() ? observaciones.trim() : null
+        observaciones: observaciones && observaciones.trim() ? observaciones.trim() : null,
+        numeroCaptaciones: numeroCaptaciones ? parseInt(numeroCaptaciones) : null
       },
       include: {
         user: {
@@ -302,6 +304,7 @@ router.put('/:id', authenticateToken, [
     if (dificultadTokko !== undefined) updateData.dificultadTokko = dificultadTokko !== undefined ? Boolean(dificultadTokko) : null;
     if (detalleDificultadTokko !== undefined) updateData.detalleDificultadTokko = detalleDificultadTokko && detalleDificultadTokko.trim() ? detalleDificultadTokko.trim() : null;
     if (observaciones !== undefined) updateData.observaciones = observaciones && observaciones.trim() ? observaciones.trim() : null;
+    if (numeroCaptaciones !== undefined) updateData.numeroCaptaciones = numeroCaptaciones ? parseInt(numeroCaptaciones) : null;
 
     const performance = await prisma.performance.update({
       where: { id },
@@ -379,12 +382,14 @@ router.get('/stats/overview', authenticateToken, requireAdmin, async (req, res) 
       _sum: {
         consultasRecibidas: true,
         muestrasRealizadas: true,
-        operacionesCerradas: true
+        operacionesCerradas: true,
+        numeroCaptaciones: true
       },
       _avg: {
         consultasRecibidas: true,
         muestrasRealizadas: true,
-        operacionesCerradas: true
+        operacionesCerradas: true,
+        numeroCaptaciones: true
       }
     });
 
@@ -405,12 +410,14 @@ router.get('/stats/overview', authenticateToken, requireAdmin, async (req, res) 
       totals: {
         consultasRecibidas: stats._sum.consultasRecibidas || 0,
         muestrasRealizadas: stats._sum.muestrasRealizadas || 0,
-        operacionesCerradas: stats._sum.operacionesCerradas || 0
+        operacionesCerradas: stats._sum.operacionesCerradas || 0,
+        numeroCaptaciones: stats._sum.numeroCaptaciones || 0
       },
       averages: {
         consultasRecibidas: Math.round(stats._avg.consultasRecibidas || 0),
         muestrasRealizadas: Math.round(stats._avg.muestrasRealizadas || 0),
-        operacionesCerradas: Math.round(stats._avg.operacionesCerradas || 0)
+        operacionesCerradas: Math.round(stats._avg.operacionesCerradas || 0),
+        numeroCaptaciones: Math.round(stats._avg.numeroCaptaciones || 0)
       },
       conversionRates
     });
@@ -466,10 +473,12 @@ router.get('/stats/tokko', authenticateToken, requireAdmin, async (req, res) => 
         cantidadPropiedadesTokko: { not: null }
       },
       _sum: {
-        cantidadPropiedadesTokko: true
+        cantidadPropiedadesTokko: true,
+        numeroCaptaciones: true
       },
       _avg: {
-        cantidadPropiedadesTokko: true
+        cantidadPropiedadesTokko: true,
+        numeroCaptaciones: true
       },
       _count: {
         cantidadPropiedadesTokko: true
@@ -532,7 +541,8 @@ router.get('/stats/tokko', authenticateToken, requireAdmin, async (req, res) => 
         ]
       },
       _sum: {
-        cantidadPropiedadesTokko: true
+        cantidadPropiedadesTokko: true,
+        numeroCaptaciones: true
       },
       _count: {
         id: true
@@ -643,13 +653,15 @@ router.get('/stats/weekly', authenticateToken, requireAdmin, async (req, res) =>
         consultasRecibidas: true,
         muestrasRealizadas: true,
         operacionesCerradas: true,
-        cantidadPropiedadesTokko: true
+        cantidadPropiedadesTokko: true,
+        numeroCaptaciones: true
       },
       _avg: {
         consultasRecibidas: true,
         muestrasRealizadas: true,
         operacionesCerradas: true,
-        cantidadPropiedadesTokko: true
+        cantidadPropiedadesTokko: true,
+        numeroCaptaciones: true
       },
       _count: {
         id: true
@@ -668,7 +680,8 @@ router.get('/stats/weekly', authenticateToken, requireAdmin, async (req, res) =>
         consultasRecibidas: true,
         muestrasRealizadas: true,
         operacionesCerradas: true,
-        cantidadPropiedadesTokko: true
+        cantidadPropiedadesTokko: true,
+        numeroCaptaciones: true
       },
       _count: {
         id: true
@@ -806,13 +819,15 @@ router.get('/stats/weekly/agents', authenticateToken, requireAdmin, async (req, 
         consultasRecibidas: true,
         muestrasRealizadas: true,
         operacionesCerradas: true,
-        cantidadPropiedadesTokko: true
+        cantidadPropiedadesTokko: true,
+        numeroCaptaciones: true
       },
       _avg: {
         consultasRecibidas: true,
         muestrasRealizadas: true,
         operacionesCerradas: true,
-        cantidadPropiedadesTokko: true
+        cantidadPropiedadesTokko: true,
+        numeroCaptaciones: true
       },
       _count: {
         id: true
@@ -832,7 +847,8 @@ router.get('/stats/weekly/agents', authenticateToken, requireAdmin, async (req, 
         consultasRecibidas: true,
         muestrasRealizadas: true,
         operacionesCerradas: true,
-        cantidadPropiedadesTokko: true
+        cantidadPropiedadesTokko: true,
+        numeroCaptaciones: true
       },
       _count: {
         id: true
@@ -946,13 +962,15 @@ router.get('/stats/weekly/team', authenticateToken, requireAdmin, async (req, re
         consultasRecibidas: true,
         muestrasRealizadas: true,
         operacionesCerradas: true,
-        cantidadPropiedadesTokko: true
+        cantidadPropiedadesTokko: true,
+        numeroCaptaciones: true
       },
       _avg: {
         consultasRecibidas: true,
         muestrasRealizadas: true,
         operacionesCerradas: true,
-        cantidadPropiedadesTokko: true
+        cantidadPropiedadesTokko: true,
+        numeroCaptaciones: true
       },
       _count: {
         id: true
@@ -971,7 +989,8 @@ router.get('/stats/weekly/team', authenticateToken, requireAdmin, async (req, re
         consultasRecibidas: true,
         muestrasRealizadas: true,
         operacionesCerradas: true,
-        cantidadPropiedadesTokko: true
+        cantidadPropiedadesTokko: true,
+        numeroCaptaciones: true
       },
       _count: {
         id: true
@@ -991,7 +1010,8 @@ router.get('/stats/weekly/team', authenticateToken, requireAdmin, async (req, re
         consultasRecibidas: true,
         muestrasRealizadas: true,
         operacionesCerradas: true,
-        cantidadPropiedadesTokko: true
+        cantidadPropiedadesTokko: true,
+        numeroCaptaciones: true
       },
       _count: {
         id: true
@@ -1117,7 +1137,8 @@ router.get('/stats/weekly/export', authenticateToken, requireAdmin, async (req, 
         consultasRecibidas: true,
         muestrasRealizadas: true,
         operacionesCerradas: true,
-        cantidadPropiedadesTokko: true
+        cantidadPropiedadesTokko: true,
+        numeroCaptaciones: true
       },
       _count: {
         id: true
@@ -1137,7 +1158,8 @@ router.get('/stats/weekly/export', authenticateToken, requireAdmin, async (req, 
         consultasRecibidas: true,
         muestrasRealizadas: true,
         operacionesCerradas: true,
-        cantidadPropiedadesTokko: true
+        cantidadPropiedadesTokko: true,
+        numeroCaptaciones: true
       },
       _count: {
         id: true

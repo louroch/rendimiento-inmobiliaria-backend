@@ -93,6 +93,7 @@ POST /api/performance
   "operacionesCerradas": 2,
   "seguimiento": true,
   "usoTokko": "Diario",
+  "numeroCaptaciones": 3,
   "cantidadPropiedadesTokko": 15,
   "linksTokko": "https://tokko.com/prop1,https://tokko.com/prop2",
   "dificultadTokko": false,
@@ -133,6 +134,7 @@ GET /api/performance/:id
     "operacionesCerradas": 2,
     "seguimiento": true,
     "usoTokko": "Diario",
+    "numeroCaptaciones": 3,
     "cantidadPropiedadesTokko": 15,
     "linksTokko": "https://tokko.com/prop1,https://tokko.com/prop2",
     "dificultadTokko": false,
@@ -235,6 +237,7 @@ GET /api/performance/stats/tokko
     "consultasRecibidas": 134,
     "muestrasRealizadas": 69,
     "operacionesCerradas": 28,
+    "numeroCaptaciones": 42,
     "propiedadesTokko": 208
   }
 }
