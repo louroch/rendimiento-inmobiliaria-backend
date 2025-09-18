@@ -115,8 +115,7 @@ router.get('/', [
       _sum: {
         consultasRecibidas: true,
         muestrasRealizadas: true,
-        operacionesCerradas: true,
-        numeroCaptaciones: true
+        operacionesCerradas: true
       },
       _avg: {
         consultasRecibidas: true,
@@ -176,8 +175,7 @@ router.get('/stats', [
       _sum: {
         consultasRecibidas: true,
         muestrasRealizadas: true,
-        operacionesCerradas: true,
-        numeroCaptaciones: true
+        operacionesCerradas: true
       },
       _avg: {
         consultasRecibidas: true,
@@ -196,8 +194,7 @@ router.get('/stats', [
       _sum: {
         consultasRecibidas: true,
         muestrasRealizadas: true,
-        operacionesCerradas: true,
-        numeroCaptaciones: true
+        operacionesCerradas: true
       },
       _count: {
         id: true

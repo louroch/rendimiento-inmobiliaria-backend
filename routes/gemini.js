@@ -58,7 +58,6 @@ router.post('/recommendations', authenticateToken, requireAdmin, async (req, res
     const totalConsultas = performanceData.reduce((sum, p) => sum + p.consultasRecibidas, 0);
     const totalMuestras = performanceData.reduce((sum, p) => sum + p.muestrasRealizadas, 0);
     const totalOperaciones = performanceData.reduce((sum, p) => sum + p.operacionesCerradas, 0);
-    const totalCaptaciones = performanceData.reduce((sum, p) => sum + (p.numeroCaptaciones || 0), 0);
     const totalSeguimiento = performanceData.filter(p => p.seguimiento).length;
 
     const conversionRates = {
@@ -170,7 +169,6 @@ router.post('/advisor-recommendations', authenticateToken, async (req, res) => {
     const totalConsultas = performanceData.reduce((sum, p) => sum + p.consultasRecibidas, 0);
     const totalMuestras = performanceData.reduce((sum, p) => sum + p.muestrasRealizadas, 0);
     const totalOperaciones = performanceData.reduce((sum, p) => sum + p.operacionesCerradas, 0);
-    const totalCaptaciones = performanceData.reduce((sum, p) => sum + (p.numeroCaptaciones || 0), 0);
     const totalSeguimiento = performanceData.filter(p => p.seguimiento).length;
 
     const conversionRates = {
@@ -307,7 +305,6 @@ router.post('/advanced-analysis', authenticateToken, requireAdmin, async (req, r
     const totalConsultas = performanceData.reduce((sum, p) => sum + p.consultasRecibidas, 0);
     const totalMuestras = performanceData.reduce((sum, p) => sum + p.muestrasRealizadas, 0);
     const totalOperaciones = performanceData.reduce((sum, p) => sum + p.operacionesCerradas, 0);
-    const totalCaptaciones = performanceData.reduce((sum, p) => sum + (p.numeroCaptaciones || 0), 0);
     const totalSeguimiento = performanceData.filter(p => p.seguimiento).length;
     const totalPropiedadesTokko = performanceData.reduce((sum, p) => sum + (p.cantidadPropiedadesTokko || 0), 0);
     const totalDificultades = performanceData.filter(p => p.dificultadTokko === true).length;
