@@ -115,12 +115,14 @@ router.get('/', [
       _sum: {
         consultasRecibidas: true,
         muestrasRealizadas: true,
-        operacionesCerradas: true
+        operacionesCerradas: true,
+        numeroCaptaciones: true
       },
       _avg: {
         consultasRecibidas: true,
         muestrasRealizadas: true,
-        operacionesCerradas: true
+        operacionesCerradas: true,
+        numeroCaptaciones: true
       }
     });
 
@@ -136,9 +138,11 @@ router.get('/', [
         totalConsultas: stats._sum.consultasRecibidas || 0,
         totalMuestras: stats._sum.muestrasRealizadas || 0,
         totalOperaciones: stats._sum.operacionesCerradas || 0,
+        totalCaptaciones: stats._sum.numeroCaptaciones || 0,
         promedioConsultas: Math.round(stats._avg.consultasRecibidas || 0),
         promedioMuestras: Math.round(stats._avg.muestrasRealizadas || 0),
-        promedioOperaciones: Math.round(stats._avg.operacionesCerradas || 0)
+        promedioOperaciones: Math.round(stats._avg.operacionesCerradas || 0),
+        promedioCaptaciones: Math.round(stats._avg.numeroCaptaciones || 0)
       }
     });
 
@@ -175,12 +179,14 @@ router.get('/stats', [
       _sum: {
         consultasRecibidas: true,
         muestrasRealizadas: true,
-        operacionesCerradas: true
+        operacionesCerradas: true,
+        numeroCaptaciones: true
       },
       _avg: {
         consultasRecibidas: true,
         muestrasRealizadas: true,
-        operacionesCerradas: true
+        operacionesCerradas: true,
+        numeroCaptaciones: true
       },
       _count: {
         id: true
@@ -194,7 +200,8 @@ router.get('/stats', [
       _sum: {
         consultasRecibidas: true,
         muestrasRealizadas: true,
-        operacionesCerradas: true
+        operacionesCerradas: true,
+        numeroCaptaciones: true
       },
       _count: {
         id: true
