@@ -12,13 +12,27 @@ const {
 
 const router = express.Router();
 
+// Función para calcular score adaptativo según tipo de agente
+function calculateAgentScore(agent, stats) {
+  const isSinMuestras = agent.email === 'agente3@inmobiliaria.com' || 
+                       agent.email === 'agente4@inmobiliaria.com';
+  
+  if (isSinMuestras) {
+    // Para agentes sin muestras: consultas + captaciones (con más peso a captaciones)
+    return (stats.consultasRecibidas || 0) + (stats.numeroCaptaciones || 0) * 2;
+  }
+  
+  // Para agentes normales: operaciones + muestras + consultas (con más peso a operaciones)
+  return (stats.operacionesCerradas || 0) * 3 + (stats.muestrasRealizadas || 0) * 2 + (stats.consultasRecibidas || 0);
+}
+
 // @route   POST /api/performance
 // @desc    Crear nuevo registro de desempeño
 // @access  Private (Asesor)
 router.post('/', authenticateToken, [
   body('fecha').isISO8601().withMessage('Fecha válida requerida'),
   body('consultasRecibidas').isInt({ min: 0 }).withMessage('Consultas recibidas debe ser un número positivo'),
-  body('muestrasRealizadas').isInt({ min: 0 }).withMessage('Muestras realizadas debe ser un número positivo'),
+  body('muestrasRealizadas').optional({ nullable: true, checkFalsy: true }).isInt({ min: 0 }).withMessage('Muestras realizadas debe ser un número positivo'),
   body('operacionesCerradas').isInt({ min: 0 }).withMessage('Operaciones cerradas debe ser un número positivo'),
   body('seguimiento').isBoolean().withMessage('Seguimiento debe ser un valor booleano'),
   body('usoTokko').optional().isString().trim(),
@@ -242,7 +256,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
 router.put('/:id', authenticateToken, [
   body('fecha').optional().isISO8601().withMessage('Fecha válida requerida'),
   body('consultasRecibidas').optional().isInt({ min: 0 }).withMessage('Consultas recibidas debe ser un número positivo'),
-  body('muestrasRealizadas').optional().isInt({ min: 0 }).withMessage('Muestras realizadas debe ser un número positivo'),
+  body('muestrasRealizadas').optional({ nullable: true, checkFalsy: true }).isInt({ min: 0 }).withMessage('Muestras realizadas debe ser un número positivo'),
   body('operacionesCerradas').optional().isInt({ min: 0 }).withMessage('Operaciones cerradas debe ser un número positivo'),
   body('numeroCaptaciones').optional({ nullable: true, checkFalsy: true }).isInt({ min: 0 }).withMessage('Número de captaciones debe ser un número positivo'),
   body('seguimiento').optional().isBoolean().withMessage('Seguimiento debe ser un valor booleano'),
@@ -938,8 +952,12 @@ router.get('/stats/weekly/agents', authenticateToken, requireAdmin, async (req, 
       };
     });
     
-    // Ordenar por total de consultas (ranking)
-    agentesConDatos.sort((a, b) => b.semanaActual.consultasRecibidas - a.semanaActual.consultasRecibidas);
+    // Ordenar por score adaptativo (ranking justo para todos los tipos de agentes)
+    agentesConDatos.sort((a, b) => {
+      const scoreA = calculateAgentScore(a.agente, a.semanaActual);
+      const scoreB = calculateAgentScore(b.agente, b.semanaActual);
+      return scoreB - scoreA;
+    });
     
     res.json({
       semana: {
@@ -1068,7 +1086,11 @@ router.get('/stats/weekly/team', authenticateToken, requireAdmin, async (req, re
         propiedades: stat._sum.cantidadPropiedadesTokko || 0,
         registros: stat._count.id
       };
-    }).sort((a, b) => b.consultas - a.consultas);
+    }).sort((a, b) => {
+      const scoreA = calculateAgentScore(a.agente, a);
+      const scoreB = calculateAgentScore(b.agente, b);
+      return scoreB - scoreA;
+    });
     
     // Calcular cambios vs semana anterior
     const cambios = {
@@ -1246,7 +1268,11 @@ router.get('/stats/weekly/export', authenticateToken, requireAdmin, async (req, 
           propiedades: stat._sum.cantidadPropiedadesTokko || 0,
           registros: stat._count.id
         };
-      }).sort((a, b) => b.consultas - a.consultas)
+      }).sort((a, b) => {
+        const scoreA = calculateAgentScore(a.agente, a);
+        const scoreB = calculateAgentScore(b.agente, b);
+        return scoreB - scoreA;
+      })
     };
     
     if (format === 'json') {

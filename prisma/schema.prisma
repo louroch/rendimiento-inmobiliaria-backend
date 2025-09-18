@@ -30,7 +30,7 @@ model Performance {
   userId              String   @db.ObjectId
   fecha               DateTime
   consultasRecibidas  Int
-  muestrasRealizadas  Int
+  muestrasRealizadas  Int?     // Hacer opcional para agentes sin muestras
   operacionesCerradas Int
   numeroCaptaciones   Int?     // Número de captaciones realizadas
   seguimiento         Boolean  @default(false)
