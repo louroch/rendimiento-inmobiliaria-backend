@@ -20,7 +20,6 @@ router.post('/', authenticateToken, [
   body('consultasRecibidas').isInt({ min: 0 }).withMessage('Consultas recibidas debe ser un número positivo'),
   body('muestrasRealizadas').isInt({ min: 0 }).withMessage('Muestras realizadas debe ser un número positivo'),
   body('operacionesCerradas').isInt({ min: 0 }).withMessage('Operaciones cerradas debe ser un número positivo'),
-  body('numeroCaptaciones').optional({ nullable: true, checkFalsy: true }).isInt({ min: 0 }).withMessage('Número de captaciones debe ser un número positivo'),
   body('seguimiento').isBoolean().withMessage('Seguimiento debe ser un valor booleano'),
   body('usoTokko').optional().isString().trim(),
   // NUEVOS CAMPOS - Validaciones
@@ -28,7 +27,8 @@ router.post('/', authenticateToken, [
   body('linksTokko').optional({ nullable: true, checkFalsy: true }).isString().trim(),
   body('dificultadTokko').optional({ nullable: true, checkFalsy: true }).isBoolean().withMessage('Dificultad Tokko debe ser un valor booleano'),
   body('detalleDificultadTokko').optional({ nullable: true, checkFalsy: true }).isString().trim(),
-  body('observaciones').optional({ nullable: true, checkFalsy: true }).isString().trim()
+  body('observaciones').optional({ nullable: true, checkFalsy: true }).isString().trim(),
+  body('numeroCaptaciones').optional({ nullable: true, checkFalsy: true }).isInt({ min: 0 }).withMessage('Número de captaciones debe ser un número positivo')
 ], async (req, res) => {
   try {
     // Log para debugging
@@ -48,7 +48,6 @@ router.post('/', authenticateToken, [
       consultasRecibidas,
       muestrasRealizadas,
       operacionesCerradas,
-      numeroCaptaciones,
       seguimiento,
       usoTokko,
       // NUEVOS CAMPOS
@@ -56,7 +55,8 @@ router.post('/', authenticateToken, [
       linksTokko,
       dificultadTokko,
       detalleDificultadTokko,
-      observaciones
+      observaciones,
+      numeroCaptaciones
     } = req.body;
 
     const performance = await prisma.performance.create({
@@ -74,7 +74,8 @@ router.post('/', authenticateToken, [
         linksTokko: linksTokko && linksTokko.trim() ? linksTokko.trim() : null,
         dificultadTokko: dificultadTokko !== undefined ? Boolean(dificultadTokko) : null,
         detalleDificultadTokko: detalleDificultadTokko && detalleDificultadTokko.trim() ? detalleDificultadTokko.trim() : null,
-        observaciones: observaciones && observaciones.trim() ? observaciones.trim() : null
+        observaciones: observaciones && observaciones.trim() ? observaciones.trim() : null,
+        numeroCaptaciones: numeroCaptaciones ? parseInt(numeroCaptaciones) : null
       },
       include: {
         user: {
@@ -251,7 +252,8 @@ router.put('/:id', authenticateToken, [
   body('linksTokko').optional({ nullable: true, checkFalsy: true }).isString().trim(),
   body('dificultadTokko').optional({ nullable: true, checkFalsy: true }).isBoolean().withMessage('Dificultad Tokko debe ser un valor booleano'),
   body('detalleDificultadTokko').optional({ nullable: true, checkFalsy: true }).isString().trim(),
-  body('observaciones').optional({ nullable: true, checkFalsy: true }).isString().trim()
+  body('observaciones').optional({ nullable: true, checkFalsy: true }).isString().trim(),
+  body('numeroCaptaciones').optional({ nullable: true, checkFalsy: true }).isInt({ min: 0 }).withMessage('Número de captaciones debe ser un número positivo')
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -284,7 +286,6 @@ router.put('/:id', authenticateToken, [
       consultasRecibidas, 
       muestrasRealizadas, 
       operacionesCerradas, 
-      numeroCaptaciones,
       seguimiento, 
       usoTokko,
       // NUEVOS CAMPOS
@@ -292,7 +293,8 @@ router.put('/:id', authenticateToken, [
       linksTokko,
       dificultadTokko,
       detalleDificultadTokko,
-      observaciones
+      observaciones,
+      numeroCaptaciones
     } = req.body;
 
     if (fecha !== undefined) updateData.fecha = new Date(fecha);
@@ -309,6 +311,7 @@ router.put('/:id', authenticateToken, [
     if (dificultadTokko !== undefined) updateData.dificultadTokko = dificultadTokko !== undefined ? Boolean(dificultadTokko) : null;
     if (detalleDificultadTokko !== undefined) updateData.detalleDificultadTokko = detalleDificultadTokko && detalleDificultadTokko.trim() ? detalleDificultadTokko.trim() : null;
     if (observaciones !== undefined) updateData.observaciones = observaciones && observaciones.trim() ? observaciones.trim() : null;
+    if (numeroCaptaciones !== undefined) updateData.numeroCaptaciones = numeroCaptaciones ? parseInt(numeroCaptaciones) : null;
 
     const performance = await prisma.performance.update({
       where: { id },
@@ -657,6 +660,7 @@ router.get('/stats/weekly', authenticateToken, requireAdmin, async (req, res) =>
         consultasRecibidas: true,
         muestrasRealizadas: true,
         operacionesCerradas: true,
+        numeroCaptaciones: true,
         cantidadPropiedadesTokko: true,
         numeroCaptaciones: true
       },
@@ -664,6 +668,7 @@ router.get('/stats/weekly', authenticateToken, requireAdmin, async (req, res) =>
         consultasRecibidas: true,
         muestrasRealizadas: true,
         operacionesCerradas: true,
+        numeroCaptaciones: true,
         cantidadPropiedadesTokko: true,
         numeroCaptaciones: true
       },
@@ -684,6 +689,7 @@ router.get('/stats/weekly', authenticateToken, requireAdmin, async (req, res) =>
         consultasRecibidas: true,
         muestrasRealizadas: true,
         operacionesCerradas: true,
+        numeroCaptaciones: true,
         cantidadPropiedadesTokko: true,
         numeroCaptaciones: true
       },
@@ -830,6 +836,7 @@ router.get('/stats/weekly/agents', authenticateToken, requireAdmin, async (req, 
         consultasRecibidas: true,
         muestrasRealizadas: true,
         operacionesCerradas: true,
+        numeroCaptaciones: true,
         cantidadPropiedadesTokko: true,
         numeroCaptaciones: true
       },
@@ -837,6 +844,7 @@ router.get('/stats/weekly/agents', authenticateToken, requireAdmin, async (req, 
         consultasRecibidas: true,
         muestrasRealizadas: true,
         operacionesCerradas: true,
+        numeroCaptaciones: true,
         cantidadPropiedadesTokko: true,
         numeroCaptaciones: true
       },
@@ -858,6 +866,7 @@ router.get('/stats/weekly/agents', authenticateToken, requireAdmin, async (req, 
         consultasRecibidas: true,
         muestrasRealizadas: true,
         operacionesCerradas: true,
+        numeroCaptaciones: true,
         cantidadPropiedadesTokko: true,
         numeroCaptaciones: true
       },
@@ -980,6 +989,7 @@ router.get('/stats/weekly/team', authenticateToken, requireAdmin, async (req, re
         consultasRecibidas: true,
         muestrasRealizadas: true,
         operacionesCerradas: true,
+        numeroCaptaciones: true,
         cantidadPropiedadesTokko: true,
         numeroCaptaciones: true
       },
@@ -987,6 +997,7 @@ router.get('/stats/weekly/team', authenticateToken, requireAdmin, async (req, re
         consultasRecibidas: true,
         muestrasRealizadas: true,
         operacionesCerradas: true,
+        numeroCaptaciones: true,
         cantidadPropiedadesTokko: true,
         numeroCaptaciones: true
       },
@@ -1007,6 +1018,7 @@ router.get('/stats/weekly/team', authenticateToken, requireAdmin, async (req, re
         consultasRecibidas: true,
         muestrasRealizadas: true,
         operacionesCerradas: true,
+        numeroCaptaciones: true,
         cantidadPropiedadesTokko: true,
         numeroCaptaciones: true
       },
@@ -1028,6 +1040,7 @@ router.get('/stats/weekly/team', authenticateToken, requireAdmin, async (req, re
         consultasRecibidas: true,
         muestrasRealizadas: true,
         operacionesCerradas: true,
+        numeroCaptaciones: true,
         cantidadPropiedadesTokko: true,
         numeroCaptaciones: true
       },
@@ -1163,6 +1176,7 @@ router.get('/stats/weekly/export', authenticateToken, requireAdmin, async (req, 
         consultasRecibidas: true,
         muestrasRealizadas: true,
         operacionesCerradas: true,
+        numeroCaptaciones: true,
         cantidadPropiedadesTokko: true,
         numeroCaptaciones: true
       },
@@ -1184,6 +1198,7 @@ router.get('/stats/weekly/export', authenticateToken, requireAdmin, async (req, 
         consultasRecibidas: true,
         muestrasRealizadas: true,
         operacionesCerradas: true,
+        numeroCaptaciones: true,
         cantidadPropiedadesTokko: true,
         numeroCaptaciones: true
       },
