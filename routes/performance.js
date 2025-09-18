@@ -675,16 +675,14 @@ router.get('/stats/weekly', authenticateToken, requireAdmin, async (req, res) =>
         muestrasRealizadas: true,
         operacionesCerradas: true,
         numeroCaptaciones: true,
-        cantidadPropiedadesTokko: true,
-        numeroCaptaciones: true
+        cantidadPropiedadesTokko: true
       },
       _avg: {
         consultasRecibidas: true,
         muestrasRealizadas: true,
         operacionesCerradas: true,
         numeroCaptaciones: true,
-        cantidadPropiedadesTokko: true,
-        numeroCaptaciones: true
+        cantidadPropiedadesTokko: true
       },
       _count: {
         id: true
@@ -704,8 +702,7 @@ router.get('/stats/weekly', authenticateToken, requireAdmin, async (req, res) =>
         muestrasRealizadas: true,
         operacionesCerradas: true,
         numeroCaptaciones: true,
-        cantidadPropiedadesTokko: true,
-        numeroCaptaciones: true
+        cantidadPropiedadesTokko: true
       },
       _count: {
         id: true
@@ -851,16 +848,14 @@ router.get('/stats/weekly/agents', authenticateToken, requireAdmin, async (req, 
         muestrasRealizadas: true,
         operacionesCerradas: true,
         numeroCaptaciones: true,
-        cantidadPropiedadesTokko: true,
-        numeroCaptaciones: true
+        cantidadPropiedadesTokko: true
       },
       _avg: {
         consultasRecibidas: true,
         muestrasRealizadas: true,
         operacionesCerradas: true,
         numeroCaptaciones: true,
-        cantidadPropiedadesTokko: true,
-        numeroCaptaciones: true
+        cantidadPropiedadesTokko: true
       },
       _count: {
         id: true
@@ -881,8 +876,7 @@ router.get('/stats/weekly/agents', authenticateToken, requireAdmin, async (req, 
         muestrasRealizadas: true,
         operacionesCerradas: true,
         numeroCaptaciones: true,
-        cantidadPropiedadesTokko: true,
-        numeroCaptaciones: true
+        cantidadPropiedadesTokko: true
       },
       _count: {
         id: true
@@ -1008,16 +1002,14 @@ router.get('/stats/weekly/team', authenticateToken, requireAdmin, async (req, re
         muestrasRealizadas: true,
         operacionesCerradas: true,
         numeroCaptaciones: true,
-        cantidadPropiedadesTokko: true,
-        numeroCaptaciones: true
+        cantidadPropiedadesTokko: true
       },
       _avg: {
         consultasRecibidas: true,
         muestrasRealizadas: true,
         operacionesCerradas: true,
         numeroCaptaciones: true,
-        cantidadPropiedadesTokko: true,
-        numeroCaptaciones: true
+        cantidadPropiedadesTokko: true
       },
       _count: {
         id: true
@@ -1037,8 +1029,7 @@ router.get('/stats/weekly/team', authenticateToken, requireAdmin, async (req, re
         muestrasRealizadas: true,
         operacionesCerradas: true,
         numeroCaptaciones: true,
-        cantidadPropiedadesTokko: true,
-        numeroCaptaciones: true
+        cantidadPropiedadesTokko: true
       },
       _count: {
         id: true
@@ -1059,8 +1050,7 @@ router.get('/stats/weekly/team', authenticateToken, requireAdmin, async (req, re
         muestrasRealizadas: true,
         operacionesCerradas: true,
         numeroCaptaciones: true,
-        cantidadPropiedadesTokko: true,
-        numeroCaptaciones: true
+        cantidadPropiedadesTokko: true
       },
       _count: {
         id: true
@@ -1199,8 +1189,7 @@ router.get('/stats/weekly/export', authenticateToken, requireAdmin, async (req, 
         muestrasRealizadas: true,
         operacionesCerradas: true,
         numeroCaptaciones: true,
-        cantidadPropiedadesTokko: true,
-        numeroCaptaciones: true
+        cantidadPropiedadesTokko: true
       },
       _count: {
         id: true
@@ -1221,8 +1210,7 @@ router.get('/stats/weekly/export', authenticateToken, requireAdmin, async (req, 
         muestrasRealizadas: true,
         operacionesCerradas: true,
         numeroCaptaciones: true,
-        cantidadPropiedadesTokko: true,
-        numeroCaptaciones: true
+        cantidadPropiedadesTokko: true
       },
       _count: {
         id: true
