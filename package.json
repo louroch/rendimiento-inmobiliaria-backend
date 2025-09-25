@@ -6,8 +6,8 @@
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
-    "build": "echo 'Build completed'",
-    "postinstall": "npx prisma generate"
+    "build": "npx prisma generate",
+    "postinstall": "echo 'Dependencies installed'"
   },
   "dependencies": {
     "@google/generative-ai": "^0.2.1",
