@@ -78,25 +78,27 @@ router.get('/ranking', authenticateToken, requireAdmin, async (req, res) => {
     const ranking = agentStats.map(stat => {
       const user = users.find(u => u.id === stat.userId);
       const totalConsultas = stat._sum.consultasRecibidas || 0;
+      const totalMuestras = stat._sum.muestrasRealizadas || 0;
       const totalOperaciones = stat._sum.operacionesCerradas || 0;
       
-      // Calcular eficiencia (operaciones/consultas * 100)
-      const eficiencia = totalConsultas > 0 ? (totalOperaciones / totalConsultas * 100) : 0;
+      // Calcular score ponderado: (operaciones × 3) + (muestras × 2) + (consultas × 1)
+      const score = (totalOperaciones * 3) + (totalMuestras * 2) + (totalConsultas * 1);
       
       return {
         userId: stat.userId,
         name: user?.name || 'Usuario no encontrado',
         email: user?.email || 'N/A',
         totalConsultas,
-        totalMuestras: stat._sum.muestrasRealizadas || 0,
+        totalMuestras,
         totalOperaciones,
         totalRegistros: stat._count.id || 0,
-        eficiencia: Math.round(eficiencia * 100) / 100 // Redondear a 2 decimales
+        score: score, // Score ponderado como nueva métrica de eficiencia
+        eficiencia: score // Mantener compatibilidad con frontend
       };
     });
 
-    // Ordenar por eficiencia (mayor a menor)
-    ranking.sort((a, b) => b.eficiencia - a.eficiencia);
+    // Ordenar por score ponderado (mayor a menor)
+    ranking.sort((a, b) => b.score - a.score);
 
     res.json({
       ranking,
