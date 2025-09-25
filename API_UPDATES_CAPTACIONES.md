@@ -1,6 +1,6 @@
 # 🔄 **ACTUALIZACIÓN BACKEND** - Campo "Número de Captaciones"
 
-## 📋 **Resumen de Cambios**
+
 
 El backend ha sido completamente sincronizado con el frontend para soportar el nuevo campo **"número de captaciones"** en todo el sistema de métricas de performance.
 
