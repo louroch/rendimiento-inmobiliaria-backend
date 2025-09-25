@@ -7,14 +7,17 @@ WORKDIR /app
 # Copy package files first for better caching
 COPY package*.json ./
 
+# Copy Prisma schema for generation
+COPY prisma ./prisma/
+
 # Install dependencies
 RUN npm ci --only=production && npm cache clean --force
 
-# Copy source code
-COPY . .
-
 # Generate Prisma client
 RUN npx prisma generate
+
+# Copy source code
+COPY . .
 
 # Create non-root user for security
 RUN addgroup -g 1001 -S nodejs
