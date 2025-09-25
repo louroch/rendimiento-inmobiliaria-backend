@@ -16,10 +16,3 @@ test-captaciones-api.js
 test-cors.js
 frontend-examples
 *.md
-.nixpacks
-.gitattributes
-.vscode
-.idea
-*.swp
-*.swo
-*~
