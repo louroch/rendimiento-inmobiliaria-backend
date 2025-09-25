@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
-    "build": "echo 'No build step required'",
+    "build": "npx prisma generate",
     "postinstall": "npx prisma generate"
   },
   "dependencies": {
