@@ -8,6 +8,20 @@ const router = express.Router();
 // Inicializar Gemini AI
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
+// @route   GET /api/gemini/env-test
+// @desc    Verificar configuración de variables de entorno
+// @access  Public (solo para debugging)
+router.get('/env-test', (req, res) => {
+  res.json({
+    hasGeminiKey: !!process.env.GEMINI_API_KEY,
+    hasDatabaseUrl: !!process.env.DATABASE_URL,
+    hasJwtSecret: !!process.env.JWT_SECRET,
+    nodeEnv: process.env.NODE_ENV,
+    geminiKeyLength: process.env.GEMINI_API_KEY ? process.env.GEMINI_API_KEY.length : 0,
+    geminiKeyPreview: process.env.GEMINI_API_KEY ? process.env.GEMINI_API_KEY.substring(0, 10) + '...' : 'No configurada'
+  });
+});
+
 // @route   POST /api/gemini/recommendations
 // @desc    Generar recomendaciones basadas en datos de desempeño
 // @access  Private (Admin)

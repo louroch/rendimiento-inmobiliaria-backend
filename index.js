@@ -9,6 +9,7 @@ const userRoutes = require('./routes/users');
 const performanceRoutes = require('./routes/performance');
 const recordsRoutes = require('./routes/records');
 const geminiRoutes = require('./routes/gemini');
+const reportsRoutes = require('./routes/reports');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -41,6 +42,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/performance', performanceRoutes);
 app.use('/api/records', recordsRoutes);
 app.use('/api/gemini', geminiRoutes);
+app.use('/api/reports', reportsRoutes);
 
 // Middleware de logging para debug
 app.use((req, res, next) => {
