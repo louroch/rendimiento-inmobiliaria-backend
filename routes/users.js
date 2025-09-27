@@ -59,7 +59,8 @@ router.get('/ranking', authenticateToken, requireAdmin, async (req, res) => {
       _sum: {
         consultasRecibidas: true,
         muestrasRealizadas: true,
-        operacionesCerradas: true
+        operacionesCerradas: true,
+        numeroCaptaciones: true
       },
       _count: { id: true }
     });
@@ -80,9 +81,11 @@ router.get('/ranking', authenticateToken, requireAdmin, async (req, res) => {
       const totalConsultas = stat._sum.consultasRecibidas || 0;
       const totalMuestras = stat._sum.muestrasRealizadas || 0;
       const totalOperaciones = stat._sum.operacionesCerradas || 0;
+      const totalCaptaciones = stat._sum.numeroCaptaciones || 0;
       
-      // Calcular score ponderado: (operaciones × 3) + (muestras × 2) + (consultas × 1)
-      const score = (totalOperaciones * 3) + (totalMuestras * 2) + (totalConsultas * 1);
+      // Calcular score ponderado: (operaciones × 3) + (muestras × 2) + (consultas × 1) + (captaciones × 2)
+      // Agregamos captaciones con peso 2 para agentes sin muestras
+      const score = (totalOperaciones * 3) + (totalMuestras * 2) + (totalConsultas * 1) + (totalCaptaciones * 2);
       
       return {
         userId: stat.userId,
@@ -91,6 +94,7 @@ router.get('/ranking', authenticateToken, requireAdmin, async (req, res) => {
         totalConsultas,
         totalMuestras,
         totalOperaciones,
+        totalCaptaciones,
         totalRegistros: stat._count.id || 0,
         score: score, // Score ponderado como nueva métrica de eficiencia
         eficiencia: score // Mantener compatibilidad con frontend
