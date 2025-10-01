@@ -82,31 +82,52 @@ app.use('*', (req, res) => {
 // Iniciar servidor
 async function startServer() {
   try {
+    console.log('🚀 Iniciando servidor...');
+    console.log(`📋 Puerto: ${PORT}`);
+    console.log(`🌍 Entorno: ${config.NODE_ENV}`);
+    
     // Conectar a la base de datos
+    console.log('🔗 Conectando a la base de datos...');
     await connectDatabase();
     
     // Inicializar cache Redis (opcional)
+    console.log('🔴 Inicializando cache Redis...');
     await initializeRedis();
     
-    app.listen(PORT, () => {
+    console.log('🌐 Iniciando servidor HTTP...');
+    app.listen(PORT, '0.0.0.0', () => {
       logSystemEvent('server_started', {
         port: PORT,
         environment: config.NODE_ENV,
         timestamp: new Date().toISOString()
       });
       
-      console.log(`🚀 Servidor ejecutándose en puerto ${PORT}`);
+      console.log(`✅ Servidor ejecutándose en puerto ${PORT}`);
       console.log(`📊 Sistema de Monitoreo de Desempeño Inmobiliario`);
-      console.log(`🌐 http://localhost:${PORT}`);
+      console.log(`🌐 http://0.0.0.0:${PORT}`);
+      console.log(`🔍 Health check: http://0.0.0.0:${PORT}/api/health`);
+      console.log(`🔍 Simple health check: http://0.0.0.0:${PORT}/api/health/simple`);
       console.log(`📝 Logs guardados en: ./logs/`);
       console.log(`🔴 Cache Redis: ${process.env.REDIS_URL ? 'Habilitado' : 'Deshabilitado'}`);
     });
+    
+    // Manejo de errores del servidor
+    app.on('error', (error) => {
+      logger.error('Error del servidor HTTP', {
+        error: error.message,
+        stack: error.stack,
+        port: PORT
+      });
+      console.error('❌ Error del servidor HTTP:', error);
+    });
+    
   } catch (error) {
     logger.error('Error iniciando servidor', {
       error: error.message,
       stack: error.stack,
       port: PORT
     });
+    console.error('❌ Error iniciando servidor:', error);
     process.exit(1);
   }
 }

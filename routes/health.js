@@ -14,32 +14,43 @@ const path = require('path');
 const router = express.Router();
 
 /**
- * Health check básico (rápido)
+ * Health check básico (rápido) - Railway compatible
  */
 router.get('/', async (req, res) => {
   try {
     const startTime = Date.now();
     
-    // Verificar conexión a la base de datos
-    const dbStatus = await getConnectionPoolStatus();
-    
-    const responseTime = Date.now() - startTime;
-    
+    // Health check básico sin dependencias externas para Railway
     const health = {
-      status: dbStatus.status === 'connected' ? 'healthy' : 'unhealthy',
+      status: 'healthy',
       timestamp: new Date().toISOString(),
-      responseTime,
+      responseTime: Date.now() - startTime,
       version: process.env.npm_package_version || '1.0.0',
       environment: process.env.NODE_ENV || 'development',
       uptime: process.uptime(),
-      database: {
-        status: dbStatus.status,
-        responseTime: dbStatus.responseTime
-      }
+      service: 'rendimiento-inmobiliaria-backend',
+      platform: 'railway'
     };
     
-    const statusCode = health.status === 'healthy' ? 200 : 503;
-    res.status(statusCode).json(health);
+    // Intentar verificar base de datos de forma no bloqueante
+    try {
+      const dbStatus = await Promise.race([
+        getConnectionPoolStatus(),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('DB timeout')), 2000))
+      ]);
+      health.database = {
+        status: dbStatus.status,
+        responseTime: dbStatus.responseTime
+      };
+    } catch (dbError) {
+      // Si la DB falla, no fallar el health check principal
+      health.database = {
+        status: 'disconnected',
+        error: 'Database check timeout or failed'
+      };
+    }
+    
+    res.status(200).json(health);
     
   } catch (error) {
     logger.error('Health check failed', {
@@ -203,6 +214,17 @@ router.get('/live', (req, res) => {
     status: 'alive',
     timestamp: new Date().toISOString(),
     uptime: process.uptime()
+  });
+});
+
+/**
+ * Health check simple para Railway (sin dependencias)
+ */
+router.get('/simple', (req, res) => {
+  res.status(200).json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    service: 'rendimiento-inmobiliaria-backend'
   });
 });
 

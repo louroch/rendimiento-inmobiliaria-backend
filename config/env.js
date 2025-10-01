@@ -46,7 +46,7 @@ const envSchema = Joi.object({
     .integer()
     .min(1000)
     .max(65535)
-    .default(5000)
+    .default(process.env.PORT || 5000)
     .messages({
       'number.min': 'PORT debe ser mayor a 1000',
       'number.max': 'PORT debe ser menor a 65535'
