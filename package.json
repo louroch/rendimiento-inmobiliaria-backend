@@ -8,7 +8,6 @@
     "start:railway": "node start-railway.js",
     "dev": "nodemon index.js",
     "build": "npx prisma generate",
-    "test:health": "node test-health.js",
     "postinstall": "echo 'Dependencies installed'"
   },
   "dependencies": {

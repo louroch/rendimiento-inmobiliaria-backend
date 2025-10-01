@@ -31,9 +31,14 @@ const baseRateLimitConfig = {
 const generalLimiter = rateLimit({
   ...baseRateLimitConfig,
   max: 200, // Más permisivo para navegación general
+  keyGenerator: (req) => {
+    // Usar el helper de rate-limit para manejar IPv6 correctamente
+    const { ipKeyGenerator } = require('express-rate-limit');
+    return ipKeyGenerator(req);
+  },
   skip: (req) => {
     // Saltar rate limiting para health checks
-    return req.path === '/api/health';
+    return req.path === '/api/health' || req.path.startsWith('/api/health/');
   }
 });
 
@@ -102,11 +107,11 @@ const geminiLimiter = rateLimit({
 const speedLimiter = slowDown({
   windowMs: 15 * 60 * 1000, // 15 minutos
   delayAfter: 50, // Después de 50 requests, empezar a ralentizar
-  delayMs: 500, // Añadir 500ms de delay por cada request adicional
+  delayMs: () => 500, // Añadir 500ms de delay por cada request adicional (nueva sintaxis)
   maxDelayMs: 20000, // Máximo 20 segundos de delay
   skip: (req) => {
     // Saltar slow down para health checks
-    return req.path === '/api/health';
+    return req.path === '/api/health' || req.path.startsWith('/api/health/');
   }
 });
 
@@ -114,8 +119,13 @@ const speedLimiter = slowDown({
 const userLimiter = rateLimit({
   ...baseRateLimitConfig,
   keyGenerator: (req) => {
-    // Usar ID de usuario si está autenticado, sino IP
-    return req.user?.id || req.ip;
+    // Usar ID de usuario si está autenticado, sino usar el helper para IP
+    if (req.user?.id) {
+      return req.user.id;
+    }
+    // Usar el helper de rate-limit para manejar IPv6 correctamente
+    const { ipKeyGenerator } = require('express-rate-limit');
+    return ipKeyGenerator(req);
   },
   max: 500, // 500 requests por usuario autenticado por ventana
   message: {

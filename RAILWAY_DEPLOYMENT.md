@@ -28,6 +28,16 @@
 - ✅ Restart policy: ON_FAILURE con 5 reintentos
 - ✅ Variables de entorno configuradas
 
+#### 4. Fixes de Base de Datos
+- ✅ Reemplazado `$queryRaw` con `$runCommandRaw` para MongoDB
+- ✅ Conexión compatible con Prisma MongoDB provider
+- ✅ Health checks no bloquean por problemas de DB
+
+#### 5. Fixes de Rate Limiting
+- ✅ Actualizado `delayMs` para express-slow-down v2
+- ✅ Corregido `keyGenerator` para IPv6 compatibility
+- ✅ Mejorado skip conditions para health checks
+
 ## 🔧 Variables de Entorno Requeridas
 
 ### Variables Obligatorias
@@ -114,6 +124,9 @@ git push origin main
 
 ### Testing Local
 ```bash
+# Probar conexión a base de datos
+npm run test:db
+
 # Probar health checks localmente
 npm run test:health
 

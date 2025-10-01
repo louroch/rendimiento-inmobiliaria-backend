@@ -30,8 +30,9 @@ async function connectDatabase() {
   try {
     await prisma.$connect();
     
-    // Verificar conexión con una consulta simple
-    await prisma.$queryRaw`SELECT 1`;
+    // Verificar conexión con una consulta simple compatible con MongoDB
+    // Usar $runCommandRaw para MongoDB en lugar de $queryRaw
+    await prisma.$runCommandRaw({ ping: 1 });
     
     logger.info('Base de datos conectada exitosamente', {
       connectionPool: {
@@ -58,9 +59,9 @@ async function connectDatabase() {
 // Función para monitorear el estado del pool de conexiones
 async function getConnectionPoolStatus() {
   try {
-    // Obtener métricas básicas de la base de datos
+    // Obtener métricas básicas de la base de datos usando MongoDB ping
     const startTime = Date.now();
-    await prisma.$queryRaw`SELECT 1`;
+    await prisma.$runCommandRaw({ ping: 1 });
     const responseTime = Date.now() - startTime;
     
     return {
