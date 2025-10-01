@@ -49,6 +49,14 @@ model Performance {
   // Relaciones
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  // ÍNDICES OPTIMIZADOS PARA RENDIMIENTO
+  @@index([fecha])                                    // Consultas por fecha
+  @@index([userId])                                   // Consultas por usuario
+  @@index([userId, fecha])                            // Consultas por usuario y fecha (más común)
+  @@index([fecha, userId])                            // Consultas por fecha y usuario
+  @@index([seguimiento])                              // Filtros por seguimiento
+  @@index([dificultadTokko])                          // Filtros por dificultad Tokko
+  @@index([createdAt])                                // Ordenamiento por fecha de creación
   @@map("performance")
 }
 

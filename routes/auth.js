@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
 const { prisma } = require('../config/database');
 const { authenticateToken } = require('../middleware/auth');
+const { authLimiter } = require('../middleware/rateLimiting');
 
 const router = express.Router();
 
@@ -79,6 +80,7 @@ router.post('/register', [
 // @desc    Iniciar sesión
 // @access  Public
 router.post('/login', [
+  authLimiter, // Rate limiting estricto para login
   body('email').isEmail().normalizeEmail().withMessage('Email válido requerido'),
   body('password').notEmpty().withMessage('Contraseña requerida')
 ], async (req, res) => {
